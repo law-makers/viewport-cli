@@ -1,0 +1,67 @@
+# ViewPort-CLI Configuration File
+# 
+# This configuration file controls the default behavior of viewport-cli.
+# CLI flags always override these settings.
+#
+# Location: ~/.config/viewport-cli/.viewport.yaml or .viewport.yaml
+# Generate: viewport-cli config init
+
+# API Configuration
+api:
+  # Backend API endpoint
+  # Can be set via VIEWPORT_API_URL environment variable
+  url: http://localhost:8787
+
+# Scan Configuration
+scan:
+  # Default viewports to scan (mobile, tablet, desktop)
+  # Can be overridden with --viewports flag
+  viewports:
+    - mobile
+    - tablet
+    - desktop
+
+  # Output directory for scan results
+  # Can be overridden with --output flag
+  output: ./viewport-results
+
+  # Enable Cloudflare Tunnel for localhost URLs
+  # Useful for exposing local development servers to the backend
+  # Can be overridden with --tunnel flag
+  tunnel: false
+
+  # Timeout for scan operations in seconds
+  # Can be overridden with --timeout flag
+  timeout: 60
+
+# Tunnel Configuration
+tunnel:
+  # Tunnel name (used by Cloudflare tunnel)
+  name: viewport-scan
+
+  # Automatically cleanup tunnel after scan completes
+  auto_cleanup: true
+
+# Display Configuration
+display:
+  # Show verbose output with more details
+  verbose: false
+
+  # Disable colored output (useful for CI/CD)
+  no_color: false
+
+  # Disable table formatting in results
+  no_table: false
+
+# Environment Variables
+# All config values can be overridden with environment variables:
+#   VIEWPORT_API_URL
+#   VIEWPORT_SCAN_VIEWPORTS
+#   VIEWPORT_SCAN_OUTPUT
+#   VIEWPORT_SCAN_TUNNEL
+#   VIEWPORT_SCAN_TIMEOUT
+#   VIEWPORT_TUNNEL_NAME
+#   VIEWPORT_TUNNEL_AUTO_CLEANUP
+#   VIEWPORT_DISPLAY_VERBOSE
+#   VIEWPORT_DISPLAY_NO_COLOR
+#   VIEWPORT_DISPLAY_NO_TABLE
