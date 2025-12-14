@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ViewPort-CLI Test Page</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        h1 {
+            color: white;
+            font-size: 2.5em;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .card {
+            background: white;
+            border-radius: 8px;
+            padding: 30px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .card h2 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 1.5em;
+        }
+
+        .card p {
+            color: #666;
+            margin-bottom: 10px;
+        }
+
+        .features {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        @media (min-width: 600px) {
+            .features {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        .feature-box {
+            background: #f5f5f5;
+            padding: 15px;
+            border-radius: 6px;
+            border-left: 4px solid #667eea;
+        }
+
+        .feature-box strong {
+            display: block;
+            color: #667eea;
+            margin-bottom: 5px;
+        }
+
+        .button {
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 6px;
+            text-decoration: none;
+            margin-top: 15px;
+            transition: background 0.3s ease;
+        }
+
+        .button:hover {
+            background: #764ba2;
+        }
+
+        .viewport-info {
+            background: #fff3cd;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 20px 0;
+            color: #856404;
+            border-left: 4px solid #ffc107;
+        }
+
+        footer {
+            text-align: center;
+            color: white;
+            margin-top: 40px;
+            opacity: 0.8;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎯 ViewPort-CLI Test Page</h1>
+        
+        <div class="card">
+            <h2>Welcome to Responsive Testing</h2>
+            <p>This page is designed to test screenshot capturing across different viewport sizes.</p>
+            
+            <div class="features">
+                <div class="feature-box">
+                    <strong>📱 Mobile</strong>
+                    <p>375×667 iPhone SE viewport</p>
+                </div>
+                <div class="feature-box">
+                    <strong>📱 Tablet</strong>
+                    <p>768×1024 iPad viewport</p>
+                </div>
+                <div class="feature-box">
+                    <strong>🖥️ Desktop</strong>
+                    <p>1920×1080 desktop viewport</p>
+                </div>
+                <div class="feature-box">
+                    <strong>✨ Responsive</strong>
+                    <p>Adapts to all screen sizes</p>
+                </div>
+            </div>
+
+            <div class="viewport-info">
+                <strong>Current Viewport:</strong>
+                <p id="viewport-size"></p>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>What is ViewPort-CLI?</h2>
+            <p>A developer tool that bridges the gap between local development and real-world device viewports. Using Cloudflare Tunnels, Headless Chrome, and AI-powered analysis, it provides instant visual regression testing and responsive design auditing directly from the terminal.</p>
+            <a href="#" class="button">Learn More</a>
+        </div>
+
+        <div class="card">
+            <h2>Features</h2>
+            <ul style="margin-left: 20px; color: #666;">
+                <li>🌐 Secure tunneling with Cloudflare</li>
+                <li>📸 Multi-viewport screenshot capture</li>
+                <li>🤖 AI-powered issue detection</li>
+                <li>📊 Automated visual regression testing</li>
+                <li>⚡ CLI-integrated workflow</li>
+            </ul>
+        </div>
+
+        <footer>
+            <p>Testing screenshot capture • ViewPort-CLI v0.1.0</p>
+        </footer>
+    </div>
+
+    <script>
+        function updateViewportSize() {
+            const element = document.getElementById('viewport-size');
+            if (element) {
+                element.textContent = `${window.innerWidth}×${window.innerHeight}px`;
+            }
+        }
+        
+        updateViewportSize();
+        window.addEventListener('resize', updateViewportSize);
+    </script>
+</body>
+</html>

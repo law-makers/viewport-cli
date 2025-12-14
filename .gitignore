@@ -1,0 +1,40 @@
+# Results and artifacts
+viewport-results/
+*.png
+*.jpg
+*.jpeg
+
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# Environment
+.env
+.env.local
+.env.*.local
+.dev.vars
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Build
+dist/
+build/
+.next/
+.turbo/
+
+# Wrangler
+.wrangler/
+wrangler-output/
+
+# Logs
+*.log
+logs/
