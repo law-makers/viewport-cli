@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.3] - 2025-12-15
+
+### Fixed
+- **Test Suite Compatibility**: Fixed `viewport-server --help` test that was failing on systems where viewport-server is not in PATH
+  - Test now intelligently tries multiple methods to find and execute viewport-server
+  - Falls back to direct script execution if command not found
+  - Handles both npm-installed and development scenarios
+- **Package.json Bin Entries**: Ensured both CLI and server have proper bin entries for npm package
+  - Both `viewport-cli` and `viewport-server` commands now properly exposed in PATH
+  - Enables seamless inter-process communication between Go CLI and Node.js server
+
+### Improved
+- **Test Robustness**: Integration tests now handle edge cases in development and production environments
+
 ## [1.0.2] - 2025-12-15
 
 ### Fixed
