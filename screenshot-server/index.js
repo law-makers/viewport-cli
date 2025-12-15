@@ -47,12 +47,14 @@ const DEVICE_VIEWPORTS = {
 let browser = null;
 let concurrentPages = 0;
 const MAX_CONCURRENT_PAGES = 3;
+let browserInitError = null; // Track browser init errors
 
 /**
  * Initialize browser
  */
 async function initBrowser() {
   if (browser) return browser;
+  if (browserInitError) throw browserInitError;
   
   try {
     const launchOptions = {
@@ -70,7 +72,9 @@ async function initBrowser() {
     console.log('[Browser] ✅ Browser initialized\n');
     return browser;
   } catch (err) {
+    browserInitError = err;
     console.error('[Browser] ❌ Failed to initialize:', err.message);
+    console.error('[Browser] Details:', err.toString());
     throw err;
   }
 }
@@ -155,12 +159,19 @@ const server = http.createServer(async (req, res) => {
 
   // Health check
   if (pathname === '/' && req.method === 'GET') {
-    res.writeHead(200);
-    res.end(JSON.stringify({
-      status: 'ok',
+    const status = {
+      status: browserInitError ? 'degraded' : 'ok',
       service: 'local-screenshot-server',
       devices: Object.keys(DEVICE_VIEWPORTS),
-    }));
+    };
+    
+    if (browserInitError) {
+      status.error = browserInitError.message;
+      status.note = 'Browser initialization failed. The server can respond to requests, but screenshot capture will fail.';
+    }
+    
+    res.writeHead(browserInitError ? 503 : 200);
+    res.end(JSON.stringify(status));
     return;
   }
 
@@ -170,6 +181,19 @@ const server = http.createServer(async (req, res) => {
     req.on('data', chunk => body += chunk);
     req.on('end', async () => {
       try {
+        // Check if browser failed to initialize
+        if (browserInitError) {
+          res.writeHead(503);
+          res.end(JSON.stringify({
+            error: 'Browser initialization failed',
+            message: browserInitError.message,
+            help: 'The Chromium browser failed to initialize. This usually means system dependencies are missing. ' +
+                  'Install dependencies: sudo apt-get install -y libnss3 libgdk-pixbuf2.0-0 libgtk-3-0 libxss1 libgbm1 libasound2',
+            details: browserInitError.toString()
+          }));
+          return;
+        }
+
         const { targetUrl, viewports } = JSON.parse(body);
         
         if (!targetUrl) {
@@ -347,18 +371,27 @@ const server = http.createServer(async (req, res) => {
  */
 async function start() {
   try {
-    console.log('[Server] Initializing browser...');
-    await initBrowser();
+    console.log('[Server] Starting screenshot server...');
     
+    // Try to initialize browser, but don't fail if it does
+    // The health check and scan endpoints will report the error
+    console.log('[Server] Attempting to initialize browser...');
+    initBrowser().catch(err => {
+      // Silently catch - error is already logged above and stored in browserInitError
+      // The health endpoint will report it as 'degraded'
+    });
+    
+    // Start HTTP server immediately (don't wait for browser)
     server.listen(PORT, () => {
-      console.log(`[Server] ✅ Local screenshot server running on http://localhost:${PORT}`);
+      console.log(`[Server] ✅ Screenshot server listening on http://localhost:${PORT}`);
       console.log('[Server] Available endpoints:');
       console.log('  GET  / - Health check');
       console.log('  POST /screenshot - Single screenshot');
       console.log('  POST /screenshots - Batch screenshots');
+      console.log('  POST /scan - CLI scan endpoint');
     });
   } catch (err) {
-    console.error('[Server] ❌ Failed to start:', err);
+    console.error('[Server] ❌ Critical error during startup:', err);
     process.exit(1);
   }
 }

@@ -26,7 +26,7 @@ func NewManager(port int) *Manager {
 	}
 }
 
-// IsRunning checks if the server is already running
+// IsRunning checks if the server is already running and healthy
 func (m *Manager) IsRunning(ctx context.Context, timeout time.Duration) bool {
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
@@ -42,7 +42,10 @@ func (m *Manager) IsRunning(ctx context.Context, timeout time.Duration) bool {
 	}
 	defer resp.Body.Close()
 
-	return resp.StatusCode == 200
+	// Accept 200 (OK) - server is ready
+	// Accept 503 (Service Unavailable) - server is responding but browser init failed
+	// This is still a successful health check - the server is running and accessible
+	return resp.StatusCode == 200 || resp.StatusCode == 503
 }
 
 // findViewportServerExecutable tries multiple methods to find viewport-server

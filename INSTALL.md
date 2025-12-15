@@ -161,6 +161,60 @@ npm install
 PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=false npm install puppeteer-core
 ```
 
+### Issue: Browser initialization failed - libnss3 missing
+
+**Cause**: System libraries required by Chromium are not installed on your system
+
+**Error message**:
+```
+Failed to launch the browser process: Code: 127
+/tmp/chromium: error while loading shared libraries: libnss3.so
+```
+
+**Solution**: Install system dependencies
+
+**On Ubuntu/Debian:**
+```bash
+sudo apt-get update
+sudo apt-get install -y \
+  libnss3 \
+  libgdk-pixbuf2.0-0 \
+  libgtk-3-0 \
+  libxss1 \
+  libgbm1 \
+  libasound2 \
+  libatk1.0-0 \
+  libatk-bridge2.0-0 \
+  libgconf-2-4
+```
+
+**On Fedora/RHEL:**
+```bash
+sudo yum install -y \
+  nss \
+  libXss \
+  libgbm \
+  alsa-lib \
+  at-spi2-atk \
+  at-spi2-core \
+  libgconf-2
+```
+
+**On Alpine Linux:**
+```bash
+apk add --no-cache \
+  chromium \
+  nss \
+  freetype \
+  harfbuzz \
+  ca-certificates
+```
+
+After installing dependencies, try again:
+```bash
+viewport-cli scan --target http://localhost:3000
+```
+
 ### Issue: Port 3001 already in use
 
 **Solution**: Use a different port:

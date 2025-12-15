@@ -1,5 +1,1 @@
-3376690d07895ba16f50d61b814b9527d255be77550cc979e3226620401a7ac8  bin/platform-binaries/macos-arm64/viewport-cli
-ee01a97bc5b176ea1651d2ece04652b5b0378008191983b868458fe136959eef  bin/platform-binaries/macos-x64/viewport-cli
-07674765f39e10f01442335e885b16c6d4351cb64458033726945a31e37fe863  bin/platform-binaries/linux-x64/viewport-cli
-887116dc8c1f4386693b4d25afb2b977a06927820cc2d42866f854494067a2f8  bin/platform-binaries/linux-arm64/viewport-cli
-09cf5515bc039f145886543828e4fb5f881365caa8ebf47c8efc54164d85ddc9  bin/platform-binaries/windows-x64/viewport-cli.exe
+21461f231d51f911f5bebb511cc839c4c1f21e72f53034277cc92fa96a79c333  bin/platform-binaries/linux-x64/viewport-cli

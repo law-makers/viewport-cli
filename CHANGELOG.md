@@ -5,6 +5,69 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.6] - 2025-12-15
+
+### Fixed
+- **Health Check Logic**: Server now correctly handles browser initialization failures
+  - Go CLI now accepts 503 status as valid health check (server is running but browser init failed)
+  - Previously would timeout waiting for 200 when browser failed to init
+  - Now provides proper error feedback with installation instructions
+  
+- **CLI Error Display**: Improved error reporting when screenshot capture fails
+  - Parse server error responses to extract human-readable messages
+  - Display error details with help text in CLI console
+  - No more raw JSON error responses in terminal
+  - Added JSON parsing for error responses with `error`, `message`, and `help` fields
+
+### Improved
+- **Error Messages**: Users now see helpful installation instructions when dependencies are missing
+- **Server Feedback**: Better communication between server and CLI about browser readiness
+
+## [1.0.5] - 2025-12-15
+
+### Added
+- **Automatic System Dependency Installation**: Postinstall script now automatically detects and installs missing Chromium system libraries on Linux
+  - Detects Linux distribution from `/etc/os-release`
+  - Ubuntu/Debian: Automatically installs libnss3, libgtk-3-0, libxss1, libgbm1, libasound2, etc.
+  - Fedora/RHEL/CentOS: Automatically installs nss, libXss, libgbm, alsa-lib, etc.
+  - Alpine Linux: Automatically installs chromium, nss, freetype, harfbuzz, ca-certificates
+  - Uses sudo when necessary for package installation
+  - Gracefully handles permission issues
+
+### Changed
+- **Installation Experience**: Zero-config installation now handles system dependencies
+  - No manual `apt-get install` commands required
+  - No need to debug "libnss3 not found" errors
+  - Users just `npm install viewport-cli` and it works
+
+### Improved
+- **User Convenience**: Installation is now truly one-command on Linux
+
+## [1.0.4] - 2025-12-15
+
+### Fixed
+- **Graceful Server Startup with Missing System Dependencies**: Server now starts successfully even if Chromium fails to initialize
+  - Server HTTP endpoint opens immediately for health checks
+  - Browser initialization happens asynchronously in background
+  - Health check endpoint (`GET /`) reports browser status accurately (200 OK if ready, 503 if degraded)
+  - Scan endpoint provides detailed error messages when browser init fails
+  - Go CLI now successfully detects server startup and can report helpful errors
+  - Includes instructions for installing missing system libraries (libnss3, libgtk-3-0, etc.)
+
+### Added
+- **Comprehensive System Dependencies Documentation**
+  - Added Ubuntu/Debian installation instructions
+  - Added Fedora/RHEL installation instructions
+  - Added Alpine Linux installation instructions
+  - Troubleshooting guide for "libnss3 not found" error
+  - Clear error messages guide users to solution
+
+### Improved
+- **Better Error Reporting**: Browser initialization errors are now properly captured and reported
+  - Server responds with helpful error messages on scan failure
+  - Health check endpoint indicates degraded state vs full outage
+  - Error messages include library names and installation commands
+
 ## [1.0.3] - 2025-12-15
 
 ### Fixed

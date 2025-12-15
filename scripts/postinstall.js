@@ -197,6 +197,142 @@ function verifyInstallation(platformId) {
 }
 
 /**
+ * Check and install system dependencies for Chromium
+ */
+function installSystemDependencies() {
+  // Detect Linux distribution
+  const osRelease = getOsRelease();
+  
+  if (!osRelease) {
+    logWarn('Could not detect Linux distribution');
+    return;
+  }
+
+  const packages = getRequiredPackages(osRelease.id);
+  
+  if (!packages) {
+    logInfo(`Distribution ${osRelease.id} not directly supported for automatic dependency installation`);
+    return;
+  }
+
+  // Check if sudo is available
+  try {
+    execSync('which sudo', { stdio: 'ignore' });
+  } catch (e) {
+    logWarn('sudo not found - cannot automatically install system dependencies');
+    return;
+  }
+
+  // Try to install dependencies
+  try {
+    logInfo(`Installing system dependencies for ${osRelease.name}...`);
+    
+    if (osRelease.id === 'ubuntu' || osRelease.id === 'debian') {
+      execSync('sudo apt-get update -qq', { stdio: 'pipe' });
+      execSync(`sudo apt-get install -y -qq ${packages.join(' ')}`, { stdio: 'pipe' });
+      logSuccess('System dependencies installed successfully');
+    } else if (osRelease.id === 'fedora' || osRelease.id === 'rhel' || osRelease.id === 'centos') {
+      execSync(`sudo yum install -y -q ${packages.join(' ')}`, { stdio: 'pipe' });
+      logSuccess('System dependencies installed successfully');
+    } else if (osRelease.id === 'alpine') {
+      execSync(`sudo apk add --no-cache -q ${packages.join(' ')}`, { stdio: 'pipe' });
+      logSuccess('System dependencies installed successfully');
+    }
+  } catch (error) {
+    logWarn(`Could not automatically install system dependencies: ${error.message}`);
+    logInfo('You can install them manually. See INSTALL.md for instructions.');
+  }
+}
+
+/**
+ * Parse /etc/os-release to detect Linux distribution
+ */
+function getOsRelease() {
+  try {
+    const content = fs.readFileSync('/etc/os-release', 'utf-8');
+    const lines = content.split('\n');
+    const data = {};
+    
+    for (const line of lines) {
+      const [key, value] = line.split('=');
+      if (key && value) {
+        data[key.toLowerCase()] = value.replace(/"/g, '');
+      }
+    }
+    
+    return data;
+  } catch (e) {
+    return null;
+  }
+}
+
+/**
+ * Get required packages for specific Linux distribution
+ */
+function getRequiredPackages(distro) {
+  const packages = {
+    ubuntu: [
+      'libnss3',
+      'libgdk-pixbuf2.0-0',
+      'libgtk-3-0',
+      'libxss1',
+      'libgbm1',
+      'libasound2',
+      'libatk1.0-0',
+      'libatk-bridge2.0-0',
+      'libgconf-2-4'
+    ],
+    debian: [
+      'libnss3',
+      'libgdk-pixbuf2.0-0',
+      'libgtk-3-0',
+      'libxss1',
+      'libgbm1',
+      'libasound2',
+      'libatk1.0-0',
+      'libatk-bridge2.0-0',
+      'libgconf-2-4'
+    ],
+    fedora: [
+      'nss',
+      'libXss',
+      'libgbm',
+      'alsa-lib',
+      'at-spi2-atk',
+      'at-spi2-core',
+      'libgconf-2'
+    ],
+    rhel: [
+      'nss',
+      'libXss',
+      'libgbm',
+      'alsa-lib',
+      'at-spi2-atk',
+      'at-spi2-core',
+      'libgconf-2'
+    ],
+    centos: [
+      'nss',
+      'libXss',
+      'libgbm',
+      'alsa-lib',
+      'at-spi2-atk',
+      'at-spi2-core',
+      'libgconf-2'
+    ],
+    alpine: [
+      'chromium',
+      'nss',
+      'freetype',
+      'harfbuzz',
+      'ca-certificates'
+    ]
+  };
+  
+  return packages[distro] || null;
+}
+
+/**
  * Main installation flow
  */
 function main() {
@@ -229,6 +365,12 @@ function main() {
     // 3. Install server dependencies
     if (!installServerDependencies()) {
       logWarn('Could not install screenshot server dependencies - you may need to install manually later');
+    }
+
+    // 3b. Install system dependencies for Chromium (Linux only)
+    if (process.platform === 'linux') {
+      logInfo('Checking for system dependencies...');
+      installSystemDependencies();
     }
 
     // 4. Verify installation

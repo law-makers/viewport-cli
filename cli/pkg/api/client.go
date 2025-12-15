@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"time"
 
@@ -85,7 +86,34 @@ func (c *Client) Scan(ctx context.Context, req *ScanRequest) (*ScanResponse, err
 	}
 
 	if !resp.IsSuccess() {
-		return nil, fmt.Errorf("API error: %d %s", resp.StatusCode(), resp.String())
+		// Try to parse error details from server response
+		respBody := resp.String()
+		
+		// Parse JSON error response to extract human-readable message
+		var errResp struct {
+			Error   string `json:"error"`
+			Message string `json:"message"`
+			Help    string `json:"help"`
+			Details string `json:"details"`
+		}
+		
+		// Attempt to unmarshal the error response
+		if err := json.Unmarshal([]byte(respBody), &errResp); err == nil && errResp.Error != "" {
+			// Extract the most helpful error message
+			msg := errResp.Error
+			if errResp.Message != "" {
+				msg = errResp.Message
+			}
+			
+			// Add help text if available
+			if errResp.Help != "" {
+				return nil, fmt.Errorf("%s\n\nHelp: %s", msg, errResp.Help)
+			}
+			return nil, fmt.Errorf("%s", msg)
+		}
+		
+		// Fallback to generic error
+		return nil, fmt.Errorf("scan failed: HTTP %d\n%s", resp.StatusCode(), respBody)
 	}
 
 	result, ok := resp.Result().(*ScanResponse)
