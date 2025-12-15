@@ -1,6 +1,6 @@
 {
   "name": "viewport-cli",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "description": "Responsive design auditing tool - capture screenshots across multiple viewports with zero manual setup",
   "keywords": [
     "responsive",

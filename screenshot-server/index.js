@@ -14,6 +14,7 @@
 
 const http = require('http');
 const url = require('url');
+const fs = require('fs');
 const puppeteer = require('puppeteer-core');
 const chromium = require('@sparticuz/chromium');
 
@@ -47,16 +48,45 @@ const DEVICE_VIEWPORTS = {
 let browser = null;
 let concurrentPages = 0;
 const MAX_CONCURRENT_PAGES = 3;
-let browserInitError = null; // Track browser init errors
+
+/**
+ * Ensure Chromium is downloaded
+ */
+async function ensureChromium() {
+  try {
+    console.log('[Chromium] Checking if Chromium is available...');
+    const execPath = await chromium.executablePath();
+    
+    if (!execPath) {
+      throw new Error('Chromium executable path not found');
+    }
+    
+    // Check if file exists
+    if (!fs.existsSync(execPath)) {
+      console.log('[Chromium] Downloading Chromium binary...');
+      // The next call will trigger download if needed
+      await chromium.executablePath();
+    }
+    
+    console.log('[Chromium] ✅ Chromium is ready at:', execPath);
+    return true;
+  } catch (err) {
+    console.error('[Chromium] ❌ Failed to ensure Chromium:', err.message);
+    console.error('[Chromium] Make sure @sparticuz/chromium is installed: npm install @sparticuz/chromium');
+    throw err;
+  }
+}
 
 /**
  * Initialize browser
  */
 async function initBrowser() {
   if (browser) return browser;
-  if (browserInitError) throw browserInitError;
   
   try {
+    // Ensure Chromium is available first
+    await ensureChromium();
+    
     const launchOptions = {
       headless: "new",
       args: [
@@ -72,9 +102,7 @@ async function initBrowser() {
     console.log('[Browser] ✅ Browser initialized\n');
     return browser;
   } catch (err) {
-    browserInitError = err;
     console.error('[Browser] ❌ Failed to initialize:', err.message);
-    console.error('[Browser] Details:', err.toString());
     throw err;
   }
 }
@@ -159,19 +187,17 @@ const server = http.createServer(async (req, res) => {
 
   // Health check
   if (pathname === '/' && req.method === 'GET') {
-    const status = {
-      status: browserInitError ? 'degraded' : 'ok',
+    const healthStatus = {
+      status: browser ? 'ok' : 'degraded',
       service: 'local-screenshot-server',
       devices: Object.keys(DEVICE_VIEWPORTS),
+      browserReady: !!browser,
     };
     
-    if (browserInitError) {
-      status.error = browserInitError.message;
-      status.note = 'Browser initialization failed. The server can respond to requests, but screenshot capture will fail.';
-    }
-    
-    res.writeHead(browserInitError ? 503 : 200);
-    res.end(JSON.stringify(status));
+    // Return 200 if browser is ready, 503 if not (but server is running)
+    const statusCode = browser ? 200 : 503;
+    res.writeHead(statusCode);
+    res.end(JSON.stringify(healthStatus));
     return;
   }
 

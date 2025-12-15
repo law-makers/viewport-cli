@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.7] - 2025-12-15
+
+### Fixed
+- **Chromium Binary Auto-Download**: Screenshot server now ensures Chromium binary is available before initializing browser
+  - Prevents "Failed to launch browser process" errors when binary not yet downloaded
+  - Automatically downloads Chromium on first server startup if not present
+  - Better error messages when Chromium unavailable or @sparticuz/chromium not installed
+  
+- **Health Check Accuracy**: Server now reports browser readiness status
+  - Returns HTTP 503 (degraded) if browser not yet initialized
+  - Go CLI correctly handles 503 as valid response and waits for browser
+  - Eliminates false positive "server ready" when browser still initializing
+  - Prevents race condition where scan fails before browser is ready
+
+### Improved
+- **Server Initialization**: Clear logging of Chromium availability checks during startup
+- **Reliability**: Better handling of Chromium binary lifecycle
+
 ## [1.0.6] - 2025-12-15
 
 ### Fixed
