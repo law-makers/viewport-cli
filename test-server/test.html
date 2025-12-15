@@ -1,233 +1,523 @@
 <!DOCTYPE html>
-<html class="light" lang="en">
-<head>
-    <meta charset="utf-8"/>
-    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-    <title>ViewPort-CLI Test Page</title>
-    <link href="https://fonts.googleapis.com/css2?family=Spline+Sans:wght@300;400;500;600;700&family=Noto+Sans:wght@400;500;700&display=swap" rel="stylesheet"/>
-    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<html class="dark" lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Responsive Testing Page</title>
+    <link href="https://fonts.googleapis.com" rel="preconnect" />
+    <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Spline+Sans:wght@300;400;500;600;700&amp;display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+      rel="stylesheet"
+    />
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
     <script id="tailwind-config">
-        tailwind.config = {
-            darkMode: "class",
-            theme: {
-                extend: {
-                    colors: {
-                        "ivory": "#EEEBDD",
-                        "smoke": "#282427",
-                    },
-                    fontFamily: {
-                        "display": ["Spline Sans", "Noto Sans", "sans-serif"]
-                    },
-                    borderRadius: {"DEFAULT": "1rem", "lg": "2rem", "xl": "3rem", "full": "9999px"},
-                    boxShadow: {
-                        'soft': '0 4px 20px -2px rgba(40, 36, 39, 0.1)',
-                        'layer': '0 10px 40px -10px rgba(40, 36, 39, 0.15)',
-                    }
-                },
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              primary: "#36e27b",
+              "background-light": "#f6f8f7",
+              "background-dark": "#112117",
+              "surface-dark": "#1d3326", // Slightly lighter than background-dark for cards
+              "surface-light": "#ffffff",
             },
-        }
+            fontFamily: {
+              display: ["Spline Sans", "sans-serif"],
+            },
+            borderRadius: {
+              DEFAULT: "1rem",
+              lg: "1.5rem",
+              xl: "2rem",
+              "2xl": "2.5rem",
+              full: "9999px",
+            },
+          },
+        },
+      };
     </script>
     <style>
-        .material-symbols-outlined {
-            font-variation-settings:
-            'FILL' 1,
-            'wght' 400,
-            'GRAD' 0,
-            'opsz' 24
-        }
-        * {
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-        button, a {
-            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-        }
+      body {
+        transition: background-color 0.3s ease, color 0.3s ease;
+      }
+      ::-webkit-scrollbar {
+        width: 8px;
+      }
+      ::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: #254632;
+        border-radius: 4px;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: #36e27b;
+      }
     </style>
-</head>
-<body class="bg-ivory font-display antialiased min-h-screen text-smoke selection:bg-smoke selection:text-ivory">
-    <div class="relative flex h-full w-full flex-col overflow-x-hidden max-w-4xl mx-auto min-h-screen">
-        
-        <!-- Sticky Header -->
-        <div class="sticky top-4 z-50 px-4 lg:px-8 mb-2">
-            <div class="bg-smoke backdrop-blur-md rounded-full px-6 py-3 flex items-center justify-between shadow-layer ring-1 ring-white/10 max-w-md mx-auto lg:max-w-none">
-                <div class="flex items-center gap-3">
-                    <span class="material-symbols-outlined text-ivory text-xl">straighten</span>
-                    <span class="text-ivory text-sm font-medium tracking-wide">Current Viewport</span>
-                </div>
-                <span class="bg-ivory text-smoke px-3 py-1 rounded-full text-xs font-bold font-mono shadow-sm" id="viewport-size">390x844px</span>
+  </head>
+  <body
+    class="bg-background-light dark:bg-background-dark font-display min-h-screen flex flex-col transition-colors duration-300"
+  >
+    <header
+      class="sticky top-0 z-50 w-full border-b border-[#e5e7eb] dark:border-[#254632] bg-background-light/80 dark:bg-background-dark/80 backdrop-blur-md"
+    >
+      <div class="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex items-center justify-between h-16">
+          <div class="flex items-center gap-3 text-gray-900 dark:text-white">
+            <div
+              class="size-8 flex items-center justify-center bg-primary rounded-lg text-background-dark"
+            >
+              <span class="material-symbols-outlined">grid_view</span>
             </div>
-        </div>
-
-        <!-- Hero Section -->
-        <div class="px-5 lg:px-8 pt-8 lg:pt-16 pb-6 lg:pb-12 flex flex-col items-center text-center">
-            <div class="mb-6 relative">
-                <div class="w-20 h-20 lg:w-28 lg:h-28 bg-smoke rounded-xl lg:rounded-2xl flex items-center justify-center rotate-3 mx-auto shadow-xl shadow-smoke/20 z-10 relative">
-                    <span class="material-symbols-outlined text-ivory text-5xl lg:text-7xl">devices</span>
-                </div>
-                <div class="w-20 h-20 lg:w-28 lg:h-28 bg-ivory rounded-xl lg:rounded-2xl flex items-center justify-center -rotate-6 absolute top-0 left-0 -z-0 border border-smoke/10 shadow-sm"></div>
+          </div>
+          <div
+            class="hidden md:flex items-center gap-6 bg-white dark:bg-[#1d3326] px-6 py-1.5 rounded-full border border-gray-200 dark:border-[#254632] shadow-sm"
+          >
+            <div class="flex items-center gap-2">
+              <span
+                class="material-symbols-outlined text-gray-500 dark:text-[#95c6a9] text-lg"
+                >width</span
+              >
+              <span
+                class="font-mono font-bold text-gray-900 dark:text-white"
+                id="vp-width"
+                >...</span
+              >
             </div>
-            <h1 class="text-smoke text-4xl lg:text-6xl xl:text-7xl font-bold tracking-tight mb-2 leading-[1.1]">ViewPort-CLI</h1>
-            <h2 class="text-smoke/60 text-lg lg:text-2xl font-medium max-w-2xl">Welcome to Responsive Testing</h2>
-            
-            <!-- Device Indicator -->
-            <div class="flex gap-3 mt-8 bg-ivory p-2 rounded-2xl border border-smoke/10 shadow-soft">
-                <div class="flex items-center gap-2 px-4 py-2 rounded-xl" id="device-mobile">
-                    <span class="material-symbols-outlined text-lg text-smoke/40">smartphone</span>
-                    <span class="text-sm font-medium text-smoke/40">Mobile</span>
-                </div>
-                <div class="flex items-center gap-2 px-4 py-2 rounded-xl" id="device-tablet">
-                    <span class="material-symbols-outlined text-lg text-smoke/40">tablet_mac</span>
-                    <span class="text-sm font-medium text-smoke/40">Tablet</span>
-                </div>
-                <div class="flex items-center gap-2 px-4 py-2 rounded-xl" id="device-desktop">
-                    <span class="material-symbols-outlined text-lg text-smoke/40">desktop_windows</span>
-                    <span class="text-sm font-medium text-smoke/40">Desktop</span>
-                </div>
+            <div class="h-4 w-px bg-gray-200 dark:bg-[#366348]"></div>
+            <div class="flex items-center gap-2">
+              <span
+                class="material-symbols-outlined text-gray-500 dark:text-[#95c6a9] text-lg"
+                >height</span
+              >
+              <span
+                class="font-mono font-bold text-gray-900 dark:text-white"
+                id="vp-height"
+                >...</span
+              >
             </div>
+          </div>
+          <div class="flex items-center gap-3">
+            <button
+              class="flex items-center justify-center size-10 rounded-full bg-gray-100 dark:bg-[#254632] text-gray-900 dark:text-white hover:bg-gray-200 dark:hover:bg-[#366348] transition-colors"
+              id="theme-toggle"
+            >
+              <span class="material-symbols-outlined dark:hidden"
+                >dark_mode</span
+              >
+              <span class="material-symbols-outlined hidden dark:block"
+                >light_mode</span
+              >
+            </button>
+          </div>
         </div>
-
-        <!-- What is Section -->
-        <div class="px-4 lg:px-8 mb-8 lg:mb-12">
-            <div class="bg-smoke rounded-2xl lg:rounded-3xl p-6 lg:p-10 shadow-layer border border-smoke/5 relative overflow-hidden max-w-5xl mx-auto">
-                <div class="absolute -top-10 -right-10 w-32 h-32 lg:w-48 lg:h-48 bg-ivory/5 rounded-full blur-2xl"></div>
-                <div class="relative z-10">
-                    <div class="flex items-start justify-between mb-4 lg:mb-6">
-                        <span class="bg-ivory text-smoke text-[10px] lg:text-xs font-bold px-2 lg:px-3 py-1 lg:py-1.5 rounded-full uppercase tracking-wider inline-block">Definition</span>
-                        <span class="material-symbols-outlined text-ivory/20 text-2xl lg:text-3xl">info</span>
-                    </div>
-                    <h3 class="text-ivory text-xl lg:text-3xl xl:text-4xl font-bold leading-tight mb-3 lg:mb-5">What is ViewPort-CLI?</h3>
-                    <p class="text-ivory/80 text-sm lg:text-lg leading-relaxed max-w-3xl">
-                        A command-line interface tool designed to streamline responsive testing across multiple devices and viewports instantly. It eliminates the guesswork in cross-platform verification.
-                    </p>
-                </div>
+      </div>
+    </header>
+    <main class="flex-grow px-4 sm:px-6 lg:px-8 py-8">
+      <div class="max-w-[1400px] mx-auto flex flex-col gap-8">
+        <div
+          class="flex flex-col md:flex-row justify-between items-start md:items-end gap-6"
+        >
+          <div class="max-w-2xl">
+            <div class="flex items-center gap-2 mb-2">
+              <span
+                class="px-3 py-1 text-xs font-bold uppercase tracking-wider text-primary bg-primary/10 rounded-full border border-primary/20"
+                >Alpha v1.0</span
+              >
             </div>
-        </div>
-
-        <!-- Key Features Section -->
-        <div class="px-4 lg:px-8 pb-12 lg:pb-20 flex-1">
-            <div class="max-w-6xl mx-auto">
-                <div class="flex items-center justify-between mb-6 lg:mb-8 px-1">
-                    <h3 class="text-smoke text-lg lg:text-2xl xl:text-3xl font-bold">Key Features</h3>
-                    <span class="text-xs lg:text-sm font-medium text-smoke/40 bg-smoke/5 px-3 lg:px-4 py-1 lg:py-1.5 rounded-full">v2.4.0</span>
-                </div>
-                
-                <div class="grid md:grid-cols-2 gap-4 lg:gap-6">
-                    <div class="group bg-ivory p-5 lg:p-7 rounded-xl lg:rounded-2xl border border-smoke/5 shadow-soft hover:shadow-layer hover:-translate-y-1 cursor-default relative overflow-hidden">
-                        <div class="flex items-start gap-4 lg:gap-5 relative z-10">
-                            <div class="w-12 h-12 lg:w-16 lg:h-16 rounded-full bg-smoke/5 flex items-center justify-center shrink-0 text-smoke group-hover:bg-smoke group-hover:text-ivory">
-                                <span class="material-symbols-outlined text-2xl lg:text-4xl">vpn_lock</span>
-                            </div>
-                            <div>
-                                <h4 class="text-smoke font-bold text-base lg:text-xl xl:text-2xl mb-1 lg:mb-2">Secure Tunneling</h4>
-                                <p class="text-smoke/60 text-xs lg:text-base xl:text-lg leading-relaxed">Test local servers safely with end-to-end encrypted tunnels directly from your terminal.</p>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="group bg-ivory p-5 lg:p-7 rounded-xl lg:rounded-2xl border border-smoke/5 shadow-soft hover:shadow-layer hover:-translate-y-1 cursor-default">
-                        <div class="flex items-start gap-4 lg:gap-5">
-                            <div class="w-12 h-12 lg:w-16 lg:h-16 rounded-full bg-smoke/5 flex items-center justify-center shrink-0 text-smoke group-hover:bg-smoke group-hover:text-ivory">
-                                <span class="material-symbols-outlined text-2xl lg:text-4xl">cameraswitch</span>
-                            </div>
-                            <div>
-                                <h4 class="text-smoke font-bold text-base lg:text-xl xl:text-2xl mb-1 lg:mb-2">Multi-viewport Capture</h4>
-                                <p class="text-smoke/60 text-xs lg:text-base xl:text-lg leading-relaxed">Generate full-page screenshots across 12+ device resolutions in a single command.</p>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="group bg-ivory p-5 lg:p-7 rounded-xl lg:rounded-2xl border border-smoke/5 shadow-soft hover:shadow-layer hover:-translate-y-1 cursor-default">
-                        <div class="flex items-start gap-4 lg:gap-5">
-                            <div class="w-12 h-12 lg:w-16 lg:h-16 rounded-full bg-smoke/5 flex items-center justify-center shrink-0 text-smoke group-hover:bg-smoke group-hover:text-ivory">
-                                <span class="material-symbols-outlined text-2xl lg:text-4xl">auto_fix_high</span>
-                            </div>
-                            <div>
-                                <div class="flex items-center gap-2 mb-1 lg:mb-2">
-                                    <h4 class="text-smoke font-bold text-base lg:text-xl xl:text-2xl">AI Issue Detection</h4>
-                                    <span class="bg-smoke text-ivory text-[9px] lg:text-[11px] font-bold px-2 py-0.5 lg:py-1 rounded-full">BETA</span>
-                                </div>
-                                <p class="text-smoke/60 text-xs lg:text-base xl:text-lg leading-relaxed">Automatically identify layout shifts and contrast violations using machine learning.</p>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="group bg-ivory p-5 lg:p-7 rounded-xl lg:rounded-2xl border border-smoke/5 shadow-soft hover:shadow-layer hover:-translate-y-1 cursor-default">
-                        <div class="flex items-start gap-4 lg:gap-5">
-                            <div class="w-12 h-12 lg:w-16 lg:h-16 rounded-full bg-smoke/5 flex items-center justify-center shrink-0 text-smoke group-hover:bg-smoke group-hover:text-ivory">
-                                <span class="material-symbols-outlined text-2xl lg:text-4xl">compare</span>
-                            </div>
-                            <div>
-                                <h4 class="text-smoke font-bold text-base lg:text-xl xl:text-2xl mb-1 lg:mb-2">Visual Regression</h4>
-                                <p class="text-smoke/60 text-xs lg:text-base xl:text-lg leading-relaxed">Automated diffing against baseline images to catch unwanted UI changes early.</p>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="group bg-ivory p-5 lg:p-7 rounded-xl lg:rounded-2xl border border-smoke/5 shadow-soft hover:shadow-layer hover:-translate-y-1 cursor-default md:col-span-2">
-                        <div class="flex items-start gap-4 lg:gap-5">
-                            <div class="w-12 h-12 lg:w-16 lg:h-16 rounded-full bg-smoke/5 flex items-center justify-center shrink-0 text-smoke group-hover:bg-smoke group-hover:text-ivory">
-                                <span class="material-symbols-outlined text-2xl lg:text-4xl">terminal</span>
-                            </div>
-                            <div>
-                                <h4 class="text-smoke font-bold text-base lg:text-xl xl:text-2xl mb-1 lg:mb-2">CLI-Integrated</h4>
-                                <p class="text-smoke/60 text-xs lg:text-base xl:text-lg leading-relaxed">Seamlessly fits into your CI/CD pipeline with zero configuration required.</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+            <h1
+              class="text-4xl md:text-5xl lg:text-6xl font-black text-gray-900 dark:text-white tracking-tight leading-[1.1]"
+            >
+              Responsive Grid <span class="text-primary">Playground</span>
+            </h1>
+            <p
+              class="mt-4 text-lg text-gray-600 dark:text-[#95c6a9] leading-relaxed"
+            >
+              Resize your browser window to watch this Bento grid layout adapt
+              in real-time. This dashboard visualizes breakpoints, flex
+              behaviors, and fluid typography.
+            </p>
+          </div>
+          <div class="flex flex-wrap gap-2 justify-end">
+            <div
+              class="flex items-center justify-center gap-2 px-4 py-2 rounded-full bg-white dark:bg-[#254632] border border-gray-200 dark:border-[#366348] shadow-sm"
+            >
+              <span
+                class="material-symbols-outlined text-gray-500 dark:text-gray-300 text-sm"
+                >phone_iphone</span
+              >
+              <p class="text-gray-900 dark:text-white text-sm font-medium">
+                XS
+              </p>
             </div>
+            <div
+              class="flex items-center justify-center gap-2 px-4 py-2 rounded-full bg-white dark:bg-[#254632] border border-gray-200 dark:border-[#366348] shadow-sm"
+            >
+              <span
+                class="material-symbols-outlined text-gray-500 dark:text-gray-300 text-sm"
+                >tablet_mac</span
+              >
+              <p class="text-gray-900 dark:text-white text-sm font-medium">
+                MD
+              </p>
+            </div>
+            <div
+              class="flex items-center justify-center gap-2 px-4 py-2 rounded-full bg-white dark:bg-[#254632] border border-gray-200 dark:border-[#366348] shadow-sm"
+            >
+              <span
+                class="material-symbols-outlined text-gray-500 dark:text-gray-300 text-sm"
+                >laptop_mac</span
+              >
+              <p class="text-gray-900 dark:text-white text-sm font-medium">
+                LG
+              </p>
+            </div>
+            <div
+              class="flex items-center justify-center gap-2 px-4 py-2 rounded-full bg-white dark:bg-[#254632] border border-gray-200 dark:border-[#366348] shadow-sm"
+            >
+              <span
+                class="material-symbols-outlined text-gray-500 dark:text-gray-300 text-sm"
+                >desktop_windows</span
+              >
+              <p class="text-gray-900 dark:text-white text-sm font-medium">
+                XL
+              </p>
+            </div>
+          </div>
         </div>
-
-        <!-- Footer -->
-        <div class="px-4 lg:px-8 pb-8 text-center">
-            <p class="text-smoke/30 text-sm lg:text-base">Testing screenshot capture • ViewPort-CLI</p>
+        <div
+          class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6 gap-4 auto-rows-[minmax(180px,auto)]"
+        >
+          <div
+            class="group col-span-1 md:col-span-2 lg:col-span-2 xl:col-span-2 row-span-2 bg-surface-light dark:bg-surface-dark rounded-2xl p-6 border border-gray-200 dark:border-[#254632] flex flex-col justify-between relative overflow-hidden transition-all hover:border-primary/50"
+          >
+            <div
+              class="absolute -right-10 -top-10 w-40 h-40 bg-primary/10 rounded-full blur-3xl group-hover:bg-primary/20 transition-all"
+            ></div>
+            <div class="flex justify-between items-start z-10">
+              <div class="p-2 bg-gray-100 dark:bg-[#112117] rounded-lg">
+                <span
+                  class="material-symbols-outlined text-gray-900 dark:text-white"
+                  >aspect_ratio</span
+                >
+              </div>
+              <span
+                class="px-3 py-1 bg-primary text-background-dark font-bold rounded-full text-sm"
+                id="bp-indicator"
+                >Loading...</span
+              >
+            </div>
+            <div class="z-10 mt-8">
+              <p class="text-gray-500 dark:text-[#95c6a9] font-medium mb-1">
+                Current Viewport
+              </p>
+              <div class="flex items-baseline gap-1">
+                <span
+                  class="text-5xl md:text-6xl font-black text-gray-900 dark:text-white tracking-tighter"
+                  id="hero-width"
+                  >...</span
+                >
+                <span
+                  class="text-2xl text-gray-400 dark:text-gray-500 font-bold"
+                  >px</span
+                >
+              </div>
+              <p
+                class="text-sm text-gray-400 dark:text-gray-500 mt-2 font-mono"
+              >
+                Resize window to update
+              </p>
+            </div>
+          </div>
+          <div
+            class="col-span-1 md:col-span-1 lg:col-span-2 xl:col-span-2 row-span-2 bg-surface-light dark:bg-surface-dark rounded-2xl p-6 border border-gray-200 dark:border-[#254632] flex flex-col gap-4"
+          >
+            <div
+              class="flex items-center justify-between pb-4 border-b border-gray-100 dark:border-[#254632]"
+            >
+              <h3 class="text-lg font-bold text-gray-900 dark:text-white">
+                Fluid Typography
+              </h3>
+              <span class="material-symbols-outlined text-gray-400"
+                >text_fields</span
+              >
+            </div>
+            <div class="flex flex-col gap-3 justify-center h-full">
+              <h1
+                class="text-4xl md:text-5xl font-black text-gray-900 dark:text-white truncate"
+              >
+                Heading 1
+              </h1>
+              <h2
+                class="text-3xl md:text-4xl font-bold text-gray-800 dark:text-gray-200 truncate"
+              >
+                Heading 2
+              </h2>
+              <h3
+                class="text-2xl md:text-3xl font-bold text-gray-700 dark:text-gray-300 truncate"
+              >
+                Heading 3
+              </h3>
+              <p
+                class="text-base text-gray-600 dark:text-gray-400 line-clamp-3"
+              >
+                Body text that adapts to the container width. The `clamp()`
+                function or responsive utility classes ensure readability across
+                all devices.
+              </p>
+            </div>
+          </div>
+          <div
+            class="col-span-1 md:col-span-1 lg:col-span-2 xl:col-span-2 row-span-2 bg-surface-light dark:bg-surface-dark rounded-2xl p-6 border border-gray-200 dark:border-[#254632]"
+          >
+            <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-4">
+              Device Simulation
+            </h3>
+            <div class="space-y-4">
+              <div
+                class="bg-gray-50 dark:bg-[#112117] p-4 rounded-xl border border-gray-100 dark:border-[#254632]"
+              >
+                <div class="flex justify-between items-center mb-2">
+                  <span
+                    class="text-sm font-medium text-gray-700 dark:text-gray-300"
+                    >Google Pixel 7</span
+                  >
+                  <span class="text-xs text-gray-400">412px</span>
+                </div>
+                <div
+                  class="w-full bg-gray-200 dark:bg-[#254632] rounded-full h-2"
+                >
+                  <div
+                    class="bg-primary h-2 rounded-full"
+                    style="width: 40%"
+                  ></div>
+                </div>
+              </div>
+              <div
+                class="bg-gray-50 dark:bg-[#112117] p-4 rounded-xl border border-gray-100 dark:border-[#254632]"
+              >
+                <div class="flex justify-between items-center mb-2">
+                  <span
+                    class="text-sm font-medium text-gray-700 dark:text-gray-300"
+                    >Galaxy Tab S8</span
+                  >
+                  <span class="text-xs text-gray-400">800px</span>
+                </div>
+                <div
+                  class="w-full bg-gray-200 dark:bg-[#254632] rounded-full h-2"
+                >
+                  <div
+                    class="bg-primary h-2 rounded-full"
+                    style="width: 65%"
+                  ></div>
+                </div>
+              </div>
+              <div
+                class="bg-gray-50 dark:bg-[#112117] p-4 rounded-xl border border-gray-100 dark:border-[#254632]"
+              >
+                <div class="flex justify-between items-center mb-2">
+                  <span
+                    class="text-sm font-medium text-gray-700 dark:text-gray-300"
+                    >Windows Laptop</span
+                  >
+                  <span class="text-xs text-gray-400">1366px</span>
+                </div>
+                <div
+                  class="w-full bg-gray-200 dark:bg-[#254632] rounded-full h-2"
+                >
+                  <div
+                    class="bg-primary h-2 rounded-full"
+                    style="width: 85%"
+                  ></div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div
+            class="col-span-1 md:col-span-2 lg:col-span-2 xl:col-span-2 row-span-1 bg-surface-light dark:bg-surface-dark rounded-2xl p-6 border border-gray-200 dark:border-[#254632] flex flex-col justify-center"
+          >
+            <div class="flex items-center justify-between mb-4">
+              <span
+                class="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider"
+                >Flex Behavior</span
+              >
+            </div>
+            <div class="flex flex-wrap gap-2">
+              <div
+                class="flex-1 min-w-[100px] h-12 bg-primary/20 rounded-lg flex items-center justify-center text-primary font-bold border border-primary/30"
+              >
+                1
+              </div>
+              <div
+                class="flex-1 min-w-[100px] h-12 bg-gray-100 dark:bg-[#254632] rounded-lg flex items-center justify-center text-gray-500 dark:text-gray-300 font-bold"
+              >
+                2
+              </div>
+              <div
+                class="flex-1 min-w-[100px] h-12 bg-gray-100 dark:bg-[#254632] rounded-lg flex items-center justify-center text-gray-500 dark:text-gray-300 font-bold"
+              >
+                3
+              </div>
+            </div>
+          </div>
+          <div
+            class="col-span-1 md:col-span-1 lg:col-span-2 xl:col-span-2 row-span-1 bg-surface-light dark:bg-surface-dark rounded-2xl p-6 border border-gray-200 dark:border-[#254632] flex items-center justify-between"
+          >
+            <div>
+              <p class="text-gray-500 dark:text-[#95c6a9] text-sm font-medium">
+                Input Modality
+              </p>
+              <p
+                class="text-gray-900 dark:text-white font-bold text-xl mt-1"
+                id="input-type"
+              >
+                Detecting...
+              </p>
+            </div>
+            <div
+              class="size-12 rounded-full bg-gray-100 dark:bg-[#254632] flex items-center justify-center text-primary"
+            >
+              <span class="material-symbols-outlined">touch_app</span>
+            </div>
+          </div>
+          <div
+            class="col-span-1 md:col-span-1 lg:col-span-2 xl:col-span-2 row-span-1 bg-surface-light dark:bg-surface-dark rounded-2xl p-6 border border-gray-200 dark:border-[#254632] flex items-center justify-between"
+          >
+            <div>
+              <p class="text-gray-500 dark:text-[#95c6a9] text-sm font-medium">
+                Pixel Density
+              </p>
+              <p class="text-gray-900 dark:text-white font-bold text-xl mt-1">
+                <span id="dpr-val">1</span>x DPR
+              </p>
+            </div>
+            <div
+              class="size-12 rounded-full bg-gray-100 dark:bg-[#254632] flex items-center justify-center text-primary"
+            >
+              <span class="material-symbols-outlined">blur_on</span>
+            </div>
+          </div>
+          <div
+            class="col-span-1 md:col-span-2 lg:col-span-2 xl:col-span-2 row-span-1 bg-[#0f172a] dark:bg-[#000000] rounded-2xl p-6 border border-gray-800 flex flex-col justify-center font-mono text-sm overflow-hidden"
+          >
+            <div class="flex gap-1.5 mb-3">
+              <div class="size-3 rounded-full bg-red-500"></div>
+              <div class="size-3 rounded-full bg-yellow-500"></div>
+              <div class="size-3 rounded-full bg-green-500"></div>
+            </div>
+            <div class="text-gray-400">
+              <span class="text-pink-500">@media</span> (min-width:
+              <span class="text-yellow-300" id="code-bp">1024px</span>) {<br />
+                <span class="text-blue-400">grid-template-columns</span>:
+              <span class="text-green-300">repeat(4, 1fr)</span>;<br />
+              }
+            </div>
+          </div>
+          <div
+            class="col-span-1 md:col-span-1 lg:col-span-2 xl:col-span-2 row-span-1 bg-gray-900 rounded-2xl relative overflow-hidden group"
+          >
+            <div
+              class="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-105"
+              data-alt="Abstract dark fluid gradient background"
+              style="
+                background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuDn_1QxpmMVv4U-z4hnV9vCPtjPKaUEu96ZuXqqo7rXYZQrkA3g9b3rnD-ayr_7cl2qQoc7UsBlnsJ0nw2cg2GVyKBd4ItQc-ypwV56Vdb2-c-1phKjRSPKhpavI8ybqVU-O4O0KltYVtnQXp7INf_yi3w7cvFtceCVSMi1amcdtAmipN-_IC-lnNKKu5Jy4kB-TA4_8KFI-yExdfXYWYs5kTx296pEa3nnXabHSTbMwR_pFNNYKIBbTVN94U2fp4IB8osijBeMMjI');
+              "
+            ></div>
+            <div
+              class="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent flex flex-col justify-end p-6"
+            >
+              <p class="text-white font-bold text-lg">Aspect Ratio</p>
+              <p class="text-gray-300 text-sm">
+                Maintains video aspect (16:9) or cover fill.
+              </p>
+            </div>
+          </div>
+          <div
+            class="col-span-1 md:col-span-1 lg:col-span-2 xl:col-span-2 row-span-1 bg-surface-light dark:bg-surface-dark rounded-2xl p-6 border border-gray-200 dark:border-[#254632] flex items-center justify-between"
+          >
+            <div>
+              <p class="text-gray-500 dark:text-[#95c6a9] text-sm font-medium">
+                Orientation
+              </p>
+              <p
+                class="text-gray-900 dark:text-white font-bold text-xl mt-1"
+                id="orient-val"
+              >
+                Landscape
+              </p>
+            </div>
+            <div
+              class="size-12 rounded-full bg-gray-100 dark:bg-[#254632] flex items-center justify-center text-primary"
+            >
+              <span class="material-symbols-outlined">screen_rotation</span>
+            </div>
+          </div>
         </div>
-    </div>
-
+      </div>
+    </main>
     <script>
-        function updateViewportSize() {
-            const element = document.getElementById('viewport-size');
-            const width = window.innerWidth;
-            
-            if (element) {
-                element.textContent = `${width}×${window.innerHeight}px`;
-            }
-            
-            // Update device indicators
-            const mobile = document.getElementById('device-mobile');
-            const tablet = document.getElementById('device-tablet');
-            const desktop = document.getElementById('device-desktop');
-            
-            // Reset all
-            [mobile, tablet, desktop].forEach(el => {
-                el.classList.remove('bg-smoke', 'shadow-lg');
-                el.querySelectorAll('.material-symbols-outlined, span').forEach(child => {
-                    child.classList.remove('text-ivory');
-                    child.classList.add('text-smoke/40');
-                });
-            });
-            
-            // Activate current device
-            let current;
-            if (width < 768) {
-                current = mobile;
-            } else if (width < 1024) {
-                current = tablet;
-            } else {
-                current = desktop;
-            }
-            
-            if (current) {
-                current.classList.add('bg-smoke', 'shadow-lg');
-                current.querySelectorAll('.material-symbols-outlined, span').forEach(child => {
-                    child.classList.remove('text-smoke/40');
-                    child.classList.add('text-ivory');
-                });
-            }
+      document.addEventListener("DOMContentLoaded", () => {
+        const widthDisplay = document.getElementById("vp-width");
+        const heightDisplay = document.getElementById("vp-height");
+        const heroWidthDisplay = document.getElementById("hero-width");
+        const bpIndicator = document.getElementById("bp-indicator");
+        const codeBp = document.getElementById("code-bp");
+        const themeToggle = document.getElementById("theme-toggle");
+        // New Elements
+        const inputType = document.getElementById("input-type");
+        const dprVal = document.getElementById("dpr-val");
+        const orientVal = document.getElementById("orient-val");
+        const html = document.documentElement;
+        function updateDimensions() {
+          const width = window.innerWidth;
+          const height = window.innerHeight;
+          widthDisplay.textContent = `${width}px`;
+          heightDisplay.textContent = `${height}px`;
+          heroWidthDisplay.textContent = width;
+          codeBp.textContent = `${width}px`;
+          let bpLabel = "XS";
+          if (width >= 640) bpLabel = "SM";
+          if (width >= 768) bpLabel = "MD";
+          if (width >= 1024) bpLabel = "LG";
+          if (width >= 1280) bpLabel = "XL";
+          if (width >= 1536) bpLabel = "2XL";
+          bpIndicator.textContent = `${bpLabel} - Mobile First`;
+          if (width >= 1024) bpIndicator.textContent = `${bpLabel} - Desktop`;
+          else if (width >= 768)
+            bpIndicator.textContent = `${bpLabel} - Tablet`;
+          // Update New Cards
+          const isTouch = window.matchMedia("(pointer: coarse)").matches;
+          inputType.textContent = isTouch ? "Coarse (Touch)" : "Fine (Mouse)";
+          dprVal.textContent = window.devicePixelRatio
+            ? window.devicePixelRatio.toFixed(1)
+            : "1.0";
+          const isLandscape = width >= height;
+          orientVal.textContent = isLandscape ? "Landscape" : "Portrait";
         }
-        
-        updateViewportSize();
-        window.addEventListener('resize', updateViewportSize);
+        // Theme Toggle Logic
+        themeToggle.addEventListener("click", () => {
+          if (html.classList.contains("dark")) {
+            html.classList.remove("dark");
+            localStorage.setItem("theme", "light");
+          } else {
+            html.classList.add("dark");
+            localStorage.setItem("theme", "dark");
+          }
+        });
+        // Initial call
+        updateDimensions();
+        // Event listener with debounce for performance (simple implementation)
+        let timeout;
+        window.addEventListener("resize", () => {
+          clearTimeout(timeout);
+          timeout = setTimeout(updateDimensions, 50);
+        });
+      });
     </script>
-</body>
+  </body>
 </html>

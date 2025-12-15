@@ -1,0 +1,67 @@
+{
+  "name": "viewport-cli",
+  "version": "1.0.2",
+  "description": "Responsive design auditing tool - capture screenshots across multiple viewports with zero manual setup",
+  "keywords": [
+    "responsive",
+    "design",
+    "testing",
+    "screenshots",
+    "cli",
+    "puppeteer",
+    "automation"
+  ],
+  "author": "law-makers",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/law-makers/viewport-cli.git"
+  },
+  "homepage": "https://github.com/law-makers/viewport-cli",
+  "bugs": {
+    "url": "https://github.com/law-makers/viewport-cli/issues"
+  },
+  "main": "lib/index.js",
+  "bin": {
+    "viewport-cli": "bin/cli.js",
+    "viewport-server": "bin/viewport-server.js"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
+  },
+  "scripts": {
+    "postinstall": "node scripts/postinstall.js",
+    "build": "bash scripts/compile-binaries.sh",
+    "build:linux": "cd cli && GOOS=linux GOARCH=amd64 go build -ldflags=\"-s -w\" -o ../bin/platform-binaries/linux-x64/viewport-cli main.go",
+    "build:macos-x64": "cd cli && GOOS=darwin GOARCH=amd64 go build -ldflags=\"-s -w\" -o ../bin/platform-binaries/macos-x64/viewport-cli main.go",
+    "build:macos-arm64": "cd cli && GOOS=darwin GOARCH=arm64 go build -ldflags=\"-s -w\" -o ../bin/platform-binaries/macos-arm64/viewport-cli main.go",
+    "build:windows": "cd cli && GOOS=windows GOARCH=amd64 go build -ldflags=\"-s -w\" -o ../bin/platform-binaries/windows-x64/viewport-cli.exe main.go",
+    "test": "npm test --prefix screenshot-server",
+    "test:integration": "cd test-server && node server.js &",
+    "prepublishOnly": "npm run build && npm run test",
+    "clean": "rm -rf bin/platform-binaries/* screenshot-server/node_modules node_modules",
+    "verify": "node scripts/verify-install.js"
+  },
+  "dependencies": {
+    "puppeteer-core": "^24.0.0",
+    "@sparticuz/chromium": "^131.0.0",
+    "express": "^4.18.0"
+  },
+  "devDependencies": {
+    "eslint": "^9.0.0"
+  },
+  "files": [
+    "bin/",
+    "lib/",
+    "scripts/",
+    "screenshot-server/",
+    "LICENSE",
+    "README.md",
+    "CHANGELOG.md",
+    "checksums.sha256"
+  ],
+  "publishConfig": {
+    "access": "public"
+  }
+}

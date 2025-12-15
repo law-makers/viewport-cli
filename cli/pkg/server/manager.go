@@ -4,7 +4,9 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"os"
 	"os/exec"
+	"path/filepath"
 	"syscall"
 	"time"
 )
@@ -43,6 +45,52 @@ func (m *Manager) IsRunning(ctx context.Context, timeout time.Duration) bool {
 	return resp.StatusCode == 200
 }
 
+// findViewportServerExecutable tries multiple methods to find viewport-server
+func findViewportServerExecutable() string {
+	// Method 1: Try 'viewport-server' directly (should be in PATH from npm)
+	if _, err := exec.LookPath("viewport-server"); err == nil {
+		return "viewport-server"
+	}
+
+	// Method 2: Try 'npx viewport-server'
+	if _, err := exec.LookPath("npx"); err == nil {
+		return "npx"
+	}
+
+	// Method 3: Try to find it relative to the executable (development mode)
+	exePath, err := os.Executable()
+	if err == nil {
+		// Look for viewport-server in npm module directory
+		// This would be: node_modules/.bin/viewport-server or similar
+		possiblePaths := []string{
+			filepath.Join(filepath.Dir(exePath), "..", "..", "node_modules", ".bin", "viewport-server"),
+			filepath.Join(filepath.Dir(exePath), "..", "..", "bin", "viewport-server.js"),
+		}
+
+		for _, p := range possiblePaths {
+			if _, err := os.Stat(p); err == nil {
+				return p
+			}
+		}
+	}
+
+	// Fallback
+	return "viewport-server"
+}
+
+// getViewportServerCommand creates the appropriate exec.Cmd for starting the server
+func getViewportServerCommand(ctx context.Context, port int) *exec.Cmd {
+	executable := findViewportServerExecutable()
+
+	// If we found npx, use it
+	if executable == "npx" {
+		return exec.CommandContext(ctx, "npx", "viewport-server", "--port", fmt.Sprintf("%d", port))
+	}
+
+	// Otherwise, use the executable directly
+	return exec.CommandContext(ctx, executable, "--port", fmt.Sprintf("%d", port))
+}
+
 // Start spawns the screenshot server
 func (m *Manager) Start(ctx context.Context, verbose bool) error {
 	// Check if already running
@@ -57,8 +105,8 @@ func (m *Manager) Start(ctx context.Context, verbose bool) error {
 		fmt.Printf("⏳ Starting screenshot server on port %d...\n", m.port)
 	}
 
-	// Spawn viewport-server process
-	m.cmd = exec.CommandContext(ctx, "viewport-server", "--port", fmt.Sprintf("%d", m.port))
+	// Spawn viewport-server process with intelligent command resolution
+	m.cmd = getViewportServerCommand(ctx, m.port)
 
 	// Run detached from this process
 	if err := m.cmd.Start(); err != nil {

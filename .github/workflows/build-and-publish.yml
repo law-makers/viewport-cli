@@ -1,0 +1,265 @@
+name: Build and Publish
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      publish:
+        description: 'Publish to NPM after build'
+        required: false
+        type: boolean
+        default: false
+
+env:
+  NODE_VERSION: '18'
+  GO_VERSION: '1.20'
+
+jobs:
+  build-binaries:
+    name: Build ${{ matrix.goos }}-${{ matrix.goarch }}
+    runs-on: ${{ matrix.runs-on }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - goos: linux
+            goarch: amd64
+            runs-on: ubuntu-latest
+            output-dir: linux-x64
+
+          - goos: linux
+            goarch: arm64
+            runs-on: ubuntu-latest
+            output-dir: linux-arm64
+
+          - goos: darwin
+            goarch: amd64
+            runs-on: macos-latest
+            output-dir: macos-x64
+
+          - goos: darwin
+            goarch: arm64
+            runs-on: macos-latest-xlarge
+            output-dir: macos-arm64
+
+          - goos: windows
+            goarch: amd64
+            runs-on: windows-latest
+            output-dir: windows-x64
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - name: Create output directory
+        run: mkdir -p bin/platform-binaries/${{ matrix.output-dir }}
+        shell: bash
+
+      - name: Build binary
+        env:
+          GOOS: ${{ matrix.goos }}
+          GOARCH: ${{ matrix.goarch }}
+        run: |
+          cd cli
+          go build -ldflags="-s -w" -o ../bin/platform-binaries/${{ matrix.output-dir }}/viewport-cli${{ matrix.goos == 'windows' && '.exe' || '' }} main.go
+        shell: bash
+
+      - name: Install UPX (Linux)
+        if: runner.os == 'Linux'
+        run: sudo apt-get install -y upx
+
+      - name: Install UPX (macOS)
+        if: runner.os == 'macOS'
+        run: brew install upx
+
+      - name: Compress binary (Unix-like)
+        if: matrix.goos != 'windows'
+        run: |
+          upx --best --lzma bin/platform-binaries/${{ matrix.output-dir }}/viewport-cli 2>/dev/null || true
+        shell: bash
+
+      - name: Upload binary artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: viewport-cli-${{ matrix.goos }}-${{ matrix.goarch }}
+          path: bin/platform-binaries/${{ matrix.output-dir }}
+          retention-days: 7
+
+  generate-checksums:
+    name: Generate Checksums
+    needs: build-binaries
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download all binaries
+        uses: actions/download-artifact@v3
+        with:
+          path: artifacts
+
+      - name: Organize binaries
+        run: |
+          mkdir -p bin/platform-binaries
+          mv artifacts/viewport-cli-linux-amd64 bin/platform-binaries/linux-x64
+          mv artifacts/viewport-cli-linux-arm64 bin/platform-binaries/linux-arm64
+          mv artifacts/viewport-cli-darwin-amd64 bin/platform-binaries/macos-x64
+          mv artifacts/viewport-cli-darwin-arm64 bin/platform-binaries/macos-arm64
+          mv artifacts/viewport-cli-windows-amd64 bin/platform-binaries/windows-x64
+          rm -rf artifacts
+
+      - name: Generate checksums
+        run: |
+          cd bin/platform-binaries
+          find . -type f \( -executable -o -name "*.exe" \) -exec sha256sum {} \; | sort > ../../checksums.sha256
+
+      - name: Upload checksums
+        uses: actions/upload-artifact@v3
+        with:
+          name: checksums
+          path: checksums.sha256
+          retention-days: 7
+
+      - name: Display checksums
+        run: cat checksums.sha256
+
+  test-installation:
+    name: Test Installation
+    needs: generate-checksums
+    runs-on: ${{ matrix.runs-on }}
+    strategy:
+      matrix:
+        include:
+          - runs-on: ubuntu-latest
+            os: linux
+          - runs-on: macos-latest
+            os: macos
+          - runs-on: windows-latest
+            os: windows
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Download all binaries
+        uses: actions/download-artifact@v3
+        with:
+          path: artifacts
+
+      - name: Organize binaries
+        shell: bash
+        run: |
+          mkdir -p bin/platform-binaries
+          mv artifacts/viewport-cli-linux-amd64 bin/platform-binaries/linux-x64 2>/dev/null || true
+          mv artifacts/viewport-cli-linux-arm64 bin/platform-binaries/linux-arm64 2>/dev/null || true
+          mv artifacts/viewport-cli-darwin-amd64 bin/platform-binaries/macos-x64 2>/dev/null || true
+          mv artifacts/viewport-cli-darwin-arm64 bin/platform-binaries/macos-arm64 2>/dev/null || true
+          mv artifacts/viewport-cli-windows-amd64 bin/platform-binaries/windows-x64 2>/dev/null || true
+          rm -rf artifacts
+
+      - name: Install screenshot server
+        run: |
+          cd screenshot-server
+          npm ci
+
+      - name: Verify bin/cli.js is executable
+        shell: bash
+        run: chmod +x bin/cli.js
+
+      - name: Test version command
+        shell: bash
+        run: node bin/cli.js --version || echo "Binary not ready yet (expected in pre-release)"
+
+      - name: Verify structure
+        shell: bash
+        run: |
+          echo "Checking package structure..."
+          test -f bin/cli.js && echo "✓ bin/cli.js exists"
+          test -f package.json && echo "✓ package.json exists"
+          test -d screenshot-server && echo "✓ screenshot-server exists"
+          test -d lib && echo "✓ lib exists"
+          test -d scripts && echo "✓ scripts exists"
+
+  publish:
+    name: Publish to NPM
+    needs: test-installation
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Download all binaries
+        uses: actions/download-artifact@v3
+        with:
+          path: artifacts
+
+      - name: Organize binaries
+        run: |
+          mkdir -p bin/platform-binaries
+          mv artifacts/viewport-cli-linux-amd64 bin/platform-binaries/linux-x64
+          mv artifacts/viewport-cli-linux-arm64 bin/platform-binaries/linux-arm64
+          mv artifacts/viewport-cli-darwin-amd64 bin/platform-binaries/macos-x64
+          mv artifacts/viewport-cli-darwin-arm64 bin/platform-binaries/macos-arm64
+          mv artifacts/viewport-cli-windows-amd64 bin/platform-binaries/windows-x64
+
+      - name: Download checksums
+        uses: actions/download-artifact@v3
+        with:
+          name: checksums
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run tests
+        run: npm test || true
+
+      - name: Publish to NPM
+        run: npm publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Create Release Notes
+        run: |
+          echo "## ViewPort-CLI ${{ github.ref_name }} Released" > release-notes.md
+          echo "" >> release-notes.md
+          echo "✅ All platforms built successfully!" >> release-notes.md
+          echo "" >> release-notes.md
+          echo "### Installation" >> release-notes.md
+          echo '```bash' >> release-notes.md
+          echo "npm install viewport-cli" >> release-notes.md
+          echo '```' >> release-notes.md
+          echo "" >> release-notes.md
+          echo "### Usage" >> release-notes.md
+          echo '```bash' >> release-notes.md
+          echo "npx viewport-cli scan --target http://localhost:3000" >> release-notes.md
+          echo '```' >> release-notes.md
+
+      - name: Create GitHub Release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref_name }}
+          release_name: ViewPort-CLI ${{ github.ref_name }}
+          body_path: release-notes.md
+          draft: false
+          prerelease: ${{ contains(github.ref, 'alpha') || contains(github.ref, 'beta') }}

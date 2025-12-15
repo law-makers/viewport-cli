@@ -1,0 +1,65 @@
+# Source code (not needed in distributed package)
+cli/
+test-server/
+PLAN.md
+SETUP_GUIDE.md
+PHASE3_PROPOSAL.md
+NPM_PUBLISH_PLAN.md
+INTEGRATION_COMPLETE.md
+
+# Build/dev files
+*.md.bak
+.git
+.github
+.gitignore
+.eslintrc
+.prettierrc
+tsconfig.json
+go.mod
+go.sum
+Dockerfile
+docker-compose.yml
+
+# Node modules (will be reinstalled)
+screenshot-server/node_modules/
+node_modules/
+package-lock.json
+
+# Tests
+**/*.test.js
+**/*.spec.js
+__tests__/
+coverage/
+.nyc_output
+
+# OS files
+.DS_Store
+thumbs.db
+.env
+.env.local
+.env.*.local
+
+# Editor files
+.vscode
+.idea
+*.swp
+*.swo
+*~
+.sublime-*
+
+# Artifacts
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Temporary
+tmp/
+temp/
+.cache
+.parcel-cache
+dist/
+build/
+.next
+.nuxt
+out/
