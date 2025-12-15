@@ -17,23 +17,13 @@ type Config struct {
 
 	// Scan Configuration
 	Scan struct {
-		// Default viewports for scans
+			// Default viewports for scans
 		Viewports []string `mapstructure:"viewports"`
 		// Default output directory
 		Output string `mapstructure:"output"`
-		// Enable tunnel by default
-		Tunnel bool `mapstructure:"tunnel"`
 		// Default timeout in seconds
 		Timeout int `mapstructure:"timeout"`
 	} `mapstructure:"scan"`
-
-	// Tunnel Configuration
-	Tunnel struct {
-		// Tunnel name
-		Name string `mapstructure:"name"`
-		// Auto-cleanup tunnel on exit
-		AutoCleanup bool `mapstructure:"auto_cleanup"`
-	} `mapstructure:"tunnel"`
 
 	// CLI Display Configuration
 	Display struct {
@@ -49,13 +39,10 @@ type Config struct {
 // DefaultConfig returns a Config with sensible defaults
 func DefaultConfig() *Config {
 	cfg := &Config{}
-	cfg.API.URL = "http://localhost:8787"
+	cfg.API.URL = "http://localhost:3001"
 	cfg.Scan.Viewports = []string{"mobile", "tablet", "desktop"}
 	cfg.Scan.Output = "./viewport-results"
-	cfg.Scan.Tunnel = false // Disabled by default for codespaces compatibility
 	cfg.Scan.Timeout = 60
-	cfg.Tunnel.Name = "viewport-scan"
-	cfg.Tunnel.AutoCleanup = true
 	cfg.Display.Verbose = false
 	cfg.Display.NoColor = false
 	cfg.Display.NoTable = false
@@ -157,10 +144,7 @@ func setDefaults(v *viper.Viper, cfg *Config) {
 	v.SetDefault("api.url", cfg.API.URL)
 	v.SetDefault("scan.viewports", cfg.Scan.Viewports)
 	v.SetDefault("scan.output", cfg.Scan.Output)
-	v.SetDefault("scan.tunnel", cfg.Scan.Tunnel)
 	v.SetDefault("scan.timeout", cfg.Scan.Timeout)
-	v.SetDefault("tunnel.name", cfg.Tunnel.Name)
-	v.SetDefault("tunnel.auto_cleanup", cfg.Tunnel.AutoCleanup)
 	v.SetDefault("display.verbose", cfg.Display.Verbose)
 	v.SetDefault("display.no_color", cfg.Display.NoColor)
 	v.SetDefault("display.no_table", cfg.Display.NoTable)

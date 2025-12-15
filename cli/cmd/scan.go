@@ -5,25 +5,27 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"net/url"
 	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
 	"github.com/charmbracelet/lipgloss"
 	"github.com/law-makers/viewport-cli/pkg/api"
 	"github.com/law-makers/viewport-cli/pkg/config"
-	"github.com/law-makers/viewport-cli/pkg/tunnel"
+	"github.com/law-makers/viewport-cli/pkg/server"
 	"github.com/spf13/cobra"
 )
 
 var (
-	targetURL  string
-	port       int
-	viewports  []string
-	output     string
-	withTunnel bool
-	apiURL     string
-	noDisplay  bool
+	targetURL string
+	port      int
+	serverPort int
+	viewports []string
+	output    string
+	apiURL    string
+	noDisplay bool
+	autoStart bool
 )
 
 var scanCmd = &cobra.Command{
@@ -31,8 +33,8 @@ var scanCmd = &cobra.Command{
 	Short: "Scan a website for responsive design issues",
 	Long: `Scan a website across multiple viewports to check for responsive design issues.
 
-By default, creates a Cloudflare tunnel to expose your localhost to the backend API,
-then captures screenshots at Mobile (375×667), Tablet (768×1024), and Desktop (1920×1080) sizes.
+Captures screenshots at Mobile (375×667), Tablet (768×1024), and Desktop (1920×1080) sizes.
+The local screenshot server is automatically started if not already running.
 
 Configuration can be managed with 'viewport-cli config init' and 'viewport-cli config show'.
 CLI flags override configuration file settings.`,
@@ -42,14 +44,12 @@ CLI flags override configuration file settings.`,
 func init() {
 	scanCmd.Flags().StringVar(&targetURL, "target", "", "Target URL to scan (e.g., http://localhost:3000)")
 	scanCmd.Flags().IntVar(&port, "port", 3000, "Local port to scan (used if target not specified)")
+	scanCmd.Flags().IntVar(&serverPort, "server-port", 3001, "Screenshot server port")
 	scanCmd.Flags().StringSliceVar(&viewports, "viewports", nil, "Viewports to test (comma-separated)")
 	scanCmd.Flags().StringVar(&output, "output", "", "Output directory for results")
-	scanCmd.Flags().BoolVar(&withTunnel, "tunnel", false, "Use Cloudflare Tunnel to expose localhost")
-	scanCmd.Flags().StringVar(&apiURL, "api", "", "Backend API endpoint")
+	scanCmd.Flags().StringVar(&apiURL, "api", "", "Screenshot server endpoint (overrides --server-port)")
 	scanCmd.Flags().BoolVar(&noDisplay, "no-display", false, "Don't display results, just save")
-
-	// Mark required flags
-	scanCmd.MarkFlagRequired("target")
+	scanCmd.Flags().BoolVar(&autoStart, "no-auto-start", false, "Don't auto-start the screenshot server")
 }
 
 func runScan(cmd *cobra.Command, args []string) error {
@@ -74,15 +74,13 @@ func runScan(cmd *cobra.Command, args []string) error {
 		viewports = []string{"mobile", "tablet", "desktop"}
 	}
 
-	if apiURL == "" && cfg != nil {
-		apiURL = cfg.API.URL
-	} else if apiURL == "" {
-		apiURL = "http://localhost:8787"
-	}
-
-	// Check if tunnel flag was explicitly set, otherwise use config value
-	if !cmd.Flags().Changed("tunnel") && cfg != nil {
-		withTunnel = cfg.Scan.Tunnel
+	// Determine API URL (--api flag takes precedence over --server-port)
+	if apiURL == "" {
+		if cfg != nil && cfg.API.URL != "" {
+			apiURL = cfg.API.URL
+		} else {
+			apiURL = fmt.Sprintf("http://localhost:%d", serverPort)
+		}
 	}
 
 	// If no target specified but port is, construct localhost URL
@@ -94,83 +92,59 @@ func runScan(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("either --target or --port must be specified")
 	}
 
-	// Parse URL to handle tunnel if target is localhost
-	parsedURL, err := url.Parse(targetURL)
-	if err != nil {
-		return fmt.Errorf("invalid target URL: %w", err)
-	}
-
-	tunnelURL := ""
-	var tm *tunnel.TunnelManager
-
-	// If target is localhost and tunnel is enabled, create tunnel
-	if withTunnel && (parsedURL.Hostname() == "localhost" || parsedURL.Hostname() == "127.0.0.1") {
-		fmt.Println("🌐 Setting up Cloudflare Tunnel...")
-
-		// Extract port from target URL or use default
-		localPort := 3000
-		if parsedURL.Port() != "" {
-			fmt.Sscanf(parsedURL.Port(), "%d", &localPort)
-		}
-
-		// Create tunnel manager
-		tunnelConfig := tunnel.TunnelConfig{
-			Name:      "viewport-scan",
-			LocalPort: localPort,
-		}
-
-		tm, err = tunnel.NewTunnelManager(tunnelConfig)
-		if err != nil {
-			return fmt.Errorf("failed to create tunnel manager: %w", err)
-		}
-
-		// Start tunnel
-		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-		tunnelURL, err = tm.Start(ctx)
-		cancel()
-
-		if err != nil {
-			return fmt.Errorf("failed to start tunnel: %w", err)
-		}
-
-		fmt.Printf("✅ Tunnel created: %s\n\n", lipgloss.NewStyle().Foreground(lipgloss.Color("6")).Render(tunnelURL))
-
-		// Update target URL to use tunnel
-		targetURL = tunnelURL + parsedURL.Path
-	}
-
 	// Display startup info
 	fmt.Printf("\n%s\n", lipgloss.NewStyle().Bold(true).Render("🎯 ViewPort-CLI Scan"))
 	fmt.Printf("Target: %s\n", lipgloss.NewStyle().Foreground(lipgloss.Color("4")).Render(targetURL))
-	fmt.Printf("API: %s\n", lipgloss.NewStyle().Foreground(lipgloss.Color("4")).Render(apiURL))
+	fmt.Printf("Screenshot Server: %s\n", lipgloss.NewStyle().Foreground(lipgloss.Color("4")).Render(apiURL))
 	fmt.Printf("Output: %s\n\n", lipgloss.NewStyle().Foreground(lipgloss.Color("4")).Render(output))
 
 	// Display which viewports
 	fmt.Printf("Viewports: %v\n\n", viewports)
 
+	// Setup server manager
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	// Handle Ctrl+C gracefully
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
+	go func() {
+		<-sigChan
+		cancel()
+	}()
+
+	// Auto-start server if needed
+	var serverManager *server.Manager
+	if !noDisplay {
+		// Extract port from apiURL
+		var sPort int
+		fmt.Sscanf(apiURL, "http://localhost:%d", &sPort)
+		if sPort == 0 {
+			sPort = serverPort
+		}
+
+		serverManager = server.NewManager(sPort)
+		if err := serverManager.Start(ctx, true); err != nil {
+			// Not fatal - server might already be running or might be on different host
+			fmt.Printf("⚠️ Warning: Could not auto-start server: %v\n", err)
+			fmt.Printf("   Continuing anyway - server may already be running\n\n")
+		} else {
+			// Register cleanup
+			defer func() {
+				if serverManager != nil {
+					serverManager.Stop()
+				}
+			}()
+		}
+	}
 
 	// Create API client
 	client := api.NewClient(apiURL)
 
-	// Convert viewport names to uppercase for API
-	viewportsAPI := make([]string, len(viewports))
-	for i, v := range viewports {
-		switch v {
-		case "mobile":
-			viewportsAPI[i] = "MOBILE"
-		case "tablet":
-			viewportsAPI[i] = "TABLET"
-		case "desktop":
-			viewportsAPI[i] = "DESKTOP"
-		default:
-			viewportsAPI[i] = v // pass through as-is
-		}
-	}
-
-	// Create scan request
+	// Create scan request (viewports are kept as-is, lowercase)
 	req := &api.ScanRequest{
 		TargetURL: targetURL,
-		Viewports: viewportsAPI,
+		Viewports: viewports,
 		Options: &api.ScanOptions{
 			FullPage: true,
 		},
@@ -181,25 +155,12 @@ func runScan(cmd *cobra.Command, args []string) error {
 	startTime := time.Now()
 
 	// Send scan request
-	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
-	defer cancel()
+	scanCtx, scanCancel := context.WithTimeout(ctx, 180*time.Second)
+	defer scanCancel()
 
-	resp, err := client.Scan(ctx, req)
+	resp, err := client.Scan(scanCtx, req)
 	if err != nil {
-		// Clean up tunnel if it was created
-		if tm != nil {
-			cleanupCtx, cleanupCancel := context.WithTimeout(context.Background(), 10*time.Second)
-			tm.Stop(cleanupCtx)
-			cleanupCancel()
-		}
 		return fmt.Errorf("scan failed: %w", err)
-	}
-
-	// Clean up tunnel if it was created
-	if tm != nil {
-		cleanupCtx, cleanupCancel := context.WithTimeout(context.Background(), 10*time.Second)
-		tm.Stop(cleanupCtx)
-		cleanupCancel()
 	}
 
 	elapsed := time.Since(startTime)
@@ -270,3 +231,4 @@ func saveResults(resp *api.ScanResponse, outputDir string) error {
 
 	return nil
 }
+

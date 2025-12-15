@@ -63,9 +63,9 @@ func NewClient(baseURL string) *Client {
 	return &Client{
 		baseURL: baseURL,
 		httpClient: resty.New().
-			SetTimeout(60 * time.Second).
-			SetRetryCount(3).
-			SetRetryWaitTime(1 * time.Second),
+			SetTimeout(120 * time.Second).
+			SetRetryCount(2).
+			SetRetryWaitTime(2 * time.Second),
 	}
 }
 

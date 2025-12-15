@@ -1,8 +1,10 @@
 package cmd
 
 import (
+	"bufio"
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/charmbracelet/lipgloss"
@@ -54,48 +56,56 @@ func init() {
 }
 
 func runConfigInit(cmd *cobra.Command, args []string) error {
-	fmt.Printf("\n%s\n\n", lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("6")).Render("⚙️  ViewPort-CLI Configuration Wizard"))
+	reader := bufio.NewReader(os.Stdin)
 
-	// Get config path
+	// 1. Check if config already exists
 	configPath, err := config.GetConfigPath()
 	if err != nil {
 		return fmt.Errorf("failed to determine config path: %w", err)
 	}
 
-	// Create default config
+	if _, err := os.Stat(configPath); err == nil {
+		fmt.Printf("Configuration file already exists at %s\n", configPath)
+		if !promptBool(reader, "Do you want to overwrite it?", false) {
+			fmt.Println("Operation cancelled.")
+			return nil
+		}
+	}
+
+	// Header
+	fmt.Printf("\n%s\n\n", lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("6")).Render("⚙️  ViewPort-CLI Configuration Wizard"))
+	fmt.Println("Press [Enter] to accept the default values in brackets.")
+	fmt.Println()
+
+	// 2. Load Default Config
 	cfg := config.DefaultConfig()
 
-	// Display current settings
-	fmt.Println("Creating configuration with default settings:")
-	fmt.Println()
-
-	// Display API configuration
+	// 3. Questions
+	// API Configuration
 	fmt.Println(lipgloss.NewStyle().Foreground(lipgloss.Color("4")).Render("📡 API Configuration"))
-	fmt.Printf("  • API Endpoint: %s\n", lipgloss.NewStyle().Foreground(lipgloss.Color("8")).Render(cfg.API.URL))
+	cfg.API.URL = promptString(reader, "API Endpoint", cfg.API.URL)
 	fmt.Println()
 
-	// Display scan configuration
+	// Scan Configuration
 	fmt.Println(lipgloss.NewStyle().Foreground(lipgloss.Color("4")).Render("📸 Scan Configuration"))
-	fmt.Printf("  • Default Viewports: %v\n", cfg.Scan.Viewports)
-	fmt.Printf("  • Output Directory: %s\n", cfg.Scan.Output)
-	fmt.Printf("  • Use Tunnel: %v\n", cfg.Scan.Tunnel)
-	fmt.Printf("  • Timeout: %ds\n", cfg.Scan.Timeout)
+	
+	// Handle Viewports (CSV)
+	defaultViewports := strings.Join(cfg.Scan.Viewports, ",")
+	viewportsInput := promptString(reader, "Default Viewports (comma separated)", defaultViewports)
+	cfg.Scan.Viewports = parseCSV(viewportsInput)
+
+	cfg.Scan.Output = promptString(reader, "Output Directory", cfg.Scan.Output)
+	
+	// Handle Timeout (Int)
+	cfg.Scan.Timeout = promptInt(reader, "Timeout (seconds)", cfg.Scan.Timeout)
 	fmt.Println()
 
-	// Display tunnel configuration
-	fmt.Println(lipgloss.NewStyle().Foreground(lipgloss.Color("4")).Render("🌐 Tunnel Configuration"))
-	fmt.Printf("  • Tunnel Name: %s\n", cfg.Tunnel.Name)
-	fmt.Printf("  • Auto-Cleanup: %v\n", cfg.Tunnel.AutoCleanup)
-	fmt.Println()
-
-	// Display settings
+	// Display Settings
 	fmt.Println(lipgloss.NewStyle().Foreground(lipgloss.Color("4")).Render("🎨 Display Settings"))
-	fmt.Printf("  • Verbose: %v\n", cfg.Display.Verbose)
-	fmt.Printf("  • Color: %v\n", !cfg.Display.NoColor)
-	fmt.Printf("  • Table Format: %v\n", !cfg.Display.NoTable)
+	cfg.Display.Verbose = promptBool(reader, "Enable Verbose Logging?", cfg.Display.Verbose)
 	fmt.Println()
 
-	// Save config
+	// 4. Save Config
 	if err := config.SaveConfig(cfg, configPath); err != nil {
 		return fmt.Errorf("failed to save config: %w", err)
 	}
@@ -104,14 +114,76 @@ func runConfigInit(cmd *cobra.Command, args []string) error {
 		lipgloss.NewStyle().Foreground(lipgloss.Color("2")).Render("✅"),
 		lipgloss.NewStyle().Bold(true).Render(fmt.Sprintf("Configuration saved to: %s", configPath)))
 
-	// Display next steps
-	fmt.Println(lipgloss.NewStyle().Foreground(lipgloss.Color("3")).Render("💡 Next Steps:"))
-	fmt.Println("  1. Edit the config file to customize settings (optional)")
-	fmt.Println("  2. Run: viewport-cli scan --target <url>")
-	fmt.Println("  3. Override config values with CLI flags as needed")
-	fmt.Println()
-
 	return nil
+}
+
+// --- Helper Functions ---
+
+// promptString asks a question and returns the string. Returns default if empty.
+func promptString(r *bufio.Reader, label string, def string) string {
+	inputStr := fmt.Sprintf("%s [%s]: ", label, lipgloss.NewStyle().Foreground(lipgloss.Color("8")).Render(def))
+	fmt.Print(inputStr)
+
+	input, _ := r.ReadString('\n')
+	input = strings.TrimSpace(input)
+
+	if input == "" {
+		return def
+	}
+	return input
+}
+
+// promptBool asks a yes/no question.
+func promptBool(r *bufio.Reader, label string, def bool) bool {
+	// Visual indicator of capital letter shows default (e.g., [Y/n] or [y/N])
+	options := "[Y/n]"
+	if !def {
+		options = "[y/N]"
+	}
+
+	fmt.Printf("%s %s: ", label, lipgloss.NewStyle().Foreground(lipgloss.Color("8")).Render(options))
+
+	input, _ := r.ReadString('\n')
+	input = strings.TrimSpace(strings.ToLower(input))
+
+	if input == "" {
+		return def
+	}
+
+	return input == "y" || input == "yes"
+}
+
+// promptInt asks for an integer.
+func promptInt(r *bufio.Reader, label string, def int) int {
+	for {
+		inputStr := fmt.Sprintf("%s [%s]: ", label, lipgloss.NewStyle().Foreground(lipgloss.Color("8")).Render(strconv.Itoa(def)))
+		fmt.Print(inputStr)
+
+		input, _ := r.ReadString('\n')
+		input = strings.TrimSpace(input)
+
+		if input == "" {
+			return def
+		}
+
+		val, err := strconv.Atoi(input)
+		if err == nil {
+			return val
+		}
+		fmt.Println(lipgloss.NewStyle().Foreground(lipgloss.Color("1")).Render("Please enter a valid number."))
+	}
+}
+
+func parseCSV(input string) []string {
+	parts := strings.Split(input, ",")
+	var result []string
+	for _, p := range parts {
+		trimmed := strings.TrimSpace(p)
+		if trimmed != "" {
+			result = append(result, trimmed)
+		}
+	}
+	return result
 }
 
 func runConfigShow(cmd *cobra.Command, args []string) error {
@@ -135,14 +207,7 @@ func runConfigShow(cmd *cobra.Command, args []string) error {
 	fmt.Println(lipgloss.NewStyle().Foreground(lipgloss.Color("4")).Render("📸 Scan Configuration"))
 	fmt.Printf("  • Viewports: %v\n", cfg.Scan.Viewports)
 	fmt.Printf("  • Output: %s\n", cfg.Scan.Output)
-	fmt.Printf("  • Tunnel: %v\n", cfg.Scan.Tunnel)
 	fmt.Printf("  • Timeout: %ds\n", cfg.Scan.Timeout)
-	fmt.Println()
-
-	// Display tunnel configuration
-	fmt.Println(lipgloss.NewStyle().Foreground(lipgloss.Color("4")).Render("🌐 Tunnel Configuration"))
-	fmt.Printf("  • Name: %s\n", cfg.Tunnel.Name)
-	fmt.Printf("  • Auto-Cleanup: %v\n", cfg.Tunnel.AutoCleanup)
 	fmt.Println()
 
 	// Display display settings
@@ -191,9 +256,9 @@ func runResultsList(cmd *cobra.Command, args []string) error {
 	}
 
 	// Display scans table
-	fmt.Println("┌─────┬──────────────────────────────────┬──────────────────────┬──────────────┬────────┐")
-	fmt.Println("│     │ Scan ID                          │ Timestamp            │ Viewports    │ Issues │")
-	fmt.Println("├─────┼──────────────────────────────────┼──────────────────────┼──────────────┼────────┤")
+	fmt.Println("┌────┬──────────────────────────────────┬──────────────────────┬──────────────┬────────┐")
+	fmt.Println("│    │ Scan ID                          │ Timestamp            │ Viewports    │ Issues │")
+	fmt.Println("├────┼──────────────────────────────────┼──────────────────────┼──────────────┼────────┤")
 
 	for _, scan := range scans {
 		// Format timestamp
@@ -211,7 +276,7 @@ func runResultsList(cmd *cobra.Command, args []string) error {
 			statusIcon = "⚠️"
 		}
 
-		fmt.Printf("│ %s  │ %-28s │ %-20s │ %-12s │ %6d │\n",
+		fmt.Printf("│ %s │ %-28s │ %-20s │ %-12s │ %6d │\n",
 			statusIcon,
 			scan.ScanID[:32],
 			timeStr,
@@ -220,7 +285,7 @@ func runResultsList(cmd *cobra.Command, args []string) error {
 		)
 	}
 
-	fmt.Println("└─────┴──────────────────────────────────┴──────────────────────┴──────────────┴────────┘")
+	fmt.Println("└────┴──────────────────────────────────┴──────────────────────┴──────────────┴────────┘")
 
 	// Display summary
 	totalIssues := 0
