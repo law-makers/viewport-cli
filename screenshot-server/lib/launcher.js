@@ -120,12 +120,27 @@ async function spawnServer(port, silent = true) {
     try {
       serverProcess = spawn('node', [indexPath, ...args], {
         cwd: path.join(__dirname, '..'),
-        stdio: silent ? 'ignore' : 'inherit',
+        stdio: silent ? ['ignore', 'ignore', 'pipe'] : 'inherit',
         detached: false,
       });
 
       serverProcess.on('error', (err) => {
         reject(new Error(`Failed to spawn server: ${err.message}`));
+      });
+
+      // Capture stderr even in silent mode to detect errors
+      if (silent && serverProcess.stderr) {
+        serverProcess.stderr.on('data', (data) => {
+          // Log to debug but don't reject - let health check determine if server is up
+          console.error(`[Server stderr] ${data}`);
+        });
+      }
+
+      // Listen for unexpected exits
+      serverProcess.on('exit', (code, signal) => {
+        if (code !== null && code !== 0) {
+          console.error(`[Server] Process exited with code ${code}`);
+        }
       });
 
       // Give process a moment to start
@@ -186,7 +201,7 @@ async function ensureServerRunning(port = 3001, autoStart = true, verbose = fals
     console.log(`[Launcher] ⏳ Waiting for server health check...`);
   }
 
-  const serverReady = await waitForServer(port, 30, 500);
+  const serverReady = await waitForServer(port, 60, 500);
 
   if (!serverReady) {
     throw new Error(
@@ -210,19 +225,22 @@ async function killServer(port = 3001) {
   return new Promise((resolve) => {
     if (serverProcess && !serverProcess.killed) {
       serverProcess.on('exit', () => {
-        resolve();
+        // After process exits, also kill any other processes on this port
+        killPortProcess(port).then(resolve);
       });
       serverProcess.kill('SIGINT');
       
-      // Force kill after 5 seconds if graceful shutdown fails
+      // Force kill after 2 seconds if graceful shutdown fails
       setTimeout(() => {
         if (serverProcess && !serverProcess.killed) {
           serverProcess.kill('SIGKILL');
         }
-        resolve();
-      }, 5000);
+        // Also kill any other processes on this port
+        killPortProcess(port).then(resolve);
+      }, 2000);
     } else {
-      resolve();
+      // Even if no process tracked, kill anything listening on this port
+      killPortProcess(port).then(resolve);
     }
   });
 }

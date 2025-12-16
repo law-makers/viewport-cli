@@ -168,13 +168,24 @@ func runScan(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		// Enhanced error reporting
 		fmt.Printf("\n%s\n", lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("1")).Render("❌ Scan Failed"))
-		fmt.Printf("Error: %v\n", err)
+		fmt.Printf("Error: %v\n\n", err)
 		
-		// Check if this is a system dependencies issue (common in Docker/IDX)
-		if contains(err.Error(), "missing dependencies") || contains(err.Error(), "libxcb") || 
-		   contains(err.Error(), "libx11") || contains(err.Error(), "libgtk") {
-			fmt.Printf("\n⚠️  System dependencies missing (common in Docker, IDX, or restricted containers)\n")
-			fmt.Printf("\nSolutions:\n")
+		// Check for Firefox/Playwright related errors
+		errStr := err.Error()
+		if contains(errStr, "Executable doesn't exist") || contains(errStr, "firefox") {
+			fmt.Printf("⚠️  Firefox browser binaries not found\n\n")
+			fmt.Printf("Solutions:\n")
+			fmt.Printf("  1. Install Firefox binaries:\n")
+			fmt.Printf("     npx playwright install firefox\n\n")
+			fmt.Printf("  2. Or install with system dependencies:\n")
+			fmt.Printf("     npx playwright install --with-deps firefox\n\n")
+			fmt.Printf("  3. If you're on Windows and Playwright was already installed,\n")
+			fmt.Printf("     try reinstalling:\n")
+			fmt.Printf("     npm install --force\n")
+		} else if contains(errStr, "missing dependencies") || contains(errStr, "libxcb") || 
+		   contains(errStr, "libx11") || contains(errStr, "libgtk") {
+			fmt.Printf("⚠️  System dependencies missing (common in Docker, IDX, or restricted containers)\n\n")
+			fmt.Printf("Solutions:\n")
 			fmt.Printf("  1. Install deps: sudo npx playwright install-deps\n")
 			fmt.Printf("  2. Use xvfb-run wrapper: xvfb-run npx viewport-cli scan --target <url>\n")
 			fmt.Printf("  3. Use in environment with system libraries (Linux desktop, native OS)\n")
@@ -197,7 +208,7 @@ func runScan(cmd *cobra.Command, args []string) error {
 		}
 		
 		fmt.Println()
-		return fmt.Errorf("scan failed: %w", err)
+		return fmt.Errorf("scan failed")
 	}
 
 	elapsed := time.Since(startTime)

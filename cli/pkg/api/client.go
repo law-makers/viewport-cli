@@ -99,17 +99,9 @@ func (c *Client) Scan(ctx context.Context, req *ScanRequest) (*ScanResponse, err
 		
 		// Attempt to unmarshal the error response
 		if err := json.Unmarshal([]byte(respBody), &errResp); err == nil && errResp.Error != "" {
-			// Extract the most helpful error message
-			msg := errResp.Error
-			if errResp.Message != "" {
-				msg = errResp.Message
-			}
-			
-			// Add help text if available
-			if errResp.Help != "" {
-				return nil, fmt.Errorf("%s\n\nHelp: %s", msg, errResp.Help)
-			}
-			return nil, fmt.Errorf("%s", msg)
+			// Return only the error message, without help text
+			// Help text will be shown separately in the CLI if needed
+			return nil, fmt.Errorf("%s", errResp.Error)
 		}
 		
 		// Fallback to generic error

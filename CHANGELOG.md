@@ -5,6 +5,33 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.6] - 2025-12-16
+
+### Fixed - Windows Firefox Support & Error Message Consolidation
+- **Windows Firefox Detection**: Added proactive browser binary detection before launch
+  - Checks if Firefox binaries exist in Playwright cache before attempting to launch
+  - Provides Windows-specific installation guidance: `npx playwright install firefox`
+  - Handles Windows executable path resolution (.exe files)
+  - Explicitly passes executable path to Playwright on Windows
+  - Fixes issue where Firefox wasn't found despite being installed
+
+- **Consolidated Error Messages**: Eliminated duplicate error reporting
+  - API client no longer includes help text in error message (prevents repetition)
+  - CLI handles error formatting once with appropriate context
+  - Users see single, clear error message instead of multiple copies
+  - Windows users get: "Firefox browser binaries not found" with solution steps
+
+- **Platform-Specific Help Messages**:
+  - Windows: Clear instruction to run `npx playwright install firefox`
+  - Linux/macOS: Instruction to run `npx playwright install --with-deps firefox`
+  - Improved error messages in screenshot server for missing binaries
+
+### Impact
+- Windows users no longer face repeated error messages
+- Firefox binaries are proactively detected before launch attempt
+- Clear, actionable error messages with platform-specific solutions
+- Faster diagnosis of missing Firefox binaries
+
 ## [1.1.5] - 2025-12-16
 
 ### Fixed

@@ -15,6 +15,8 @@
 
 const http = require('http');
 const url = require('url');
+const path = require('path');
+const fs = require('fs');
 const { firefox } = require('playwright');
 
 // Parse command line arguments
@@ -51,6 +53,59 @@ let browserInitError = null; // Track browser init errors
 let serverInstance = null; // Track HTTP server for graceful shutdown
 
 /**
+ * Check if Firefox binaries exist for current platform
+ */
+function checkFirefoxInstalled() {
+  try {
+    const playwrightPath = require.resolve('playwright');
+    const browsersPath = path.join(path.dirname(playwrightPath), '..', '.browsers');
+    
+    // Check for Firefox install
+    if (fs.existsSync(browsersPath)) {
+      const firefoxDirs = fs.readdirSync(browsersPath).filter(f => f.startsWith('firefox-'));
+      
+      if (firefoxDirs.length > 0) {
+        // Find the actual executable
+        const firefoxDir = firefoxDirs[0];
+        const firefoxPath = path.join(browsersPath, firefoxDir, 'firefox');
+        
+        // Windows uses .exe extension
+        const executableName = process.platform === 'win32' ? 'firefox.exe' : 'firefox';
+        const executablePath = path.join(firefoxPath, executableName);
+        
+        // Check in various possible locations for Windows
+        if (process.platform === 'win32') {
+          const possiblePaths = [
+            executablePath,
+            path.join(firefoxPath, 'firefox', 'firefox.exe'),
+            path.join(firefoxPath, 'firefox.exe'),
+          ];
+          
+          for (const checkPath of possiblePaths) {
+            if (fs.existsSync(checkPath)) {
+              return { installed: true, path: checkPath };
+            }
+          }
+          
+          // If not found in expected locations, return the directory for debugging
+          return { installed: false, path: firefoxPath, reason: 'executable not found in Firefox directory' };
+        }
+        
+        if (fs.existsSync(executablePath)) {
+          return { installed: true, path: executablePath };
+        }
+        
+        return { installed: false, path: firefoxPath, reason: 'Firefox binary executable not found' };
+      }
+    }
+    
+    return { installed: false, path: browsersPath, reason: 'Firefox not downloaded' };
+  } catch (err) {
+    return { installed: false, reason: err.message };
+  }
+}
+
+/**
  * Initialize browser with Playwright
  */
 async function initBrowser() {
@@ -60,9 +115,20 @@ async function initBrowser() {
   try {
     console.log('[Browser] Starting Playwright with Firefox...');
     
-    browser = await firefox.launch({
+    // Check if Firefox binaries exist before attempting launch (only on Windows or when explicitly needed)
+    const launchOptions = {
       headless: true,
-    });
+    };
+    
+    // On Windows, try to detect and use the explicit executable path
+    if (process.platform === 'win32') {
+      const firefoxCheck = checkFirefoxInstalled();
+      if (firefoxCheck.installed && firefoxCheck.path) {
+        launchOptions.executablePath = firefoxCheck.path;
+      }
+    }
+    
+    browser = await firefox.launch(launchOptions);
     
     console.log('[Browser] ✅ Firefox browser initialized\n');
     return browser;
@@ -71,7 +137,19 @@ async function initBrowser() {
     console.error('[Browser] ❌ Failed to initialize Firefox:', err.message);
     
     // Provide helpful guidance based on error type
-    if (err.message.includes('dependencies') || err.message.includes('missing')) {
+    const isWindowsPlatform = process.platform === 'win32';
+    
+    if (err.message.includes('not found') || err.message.includes('Executable doesn')) {
+      console.error('[Browser] Firefox binaries are missing. Solutions:');
+      console.error('[Browser]   1. Install Firefox binaries:');
+      console.error('[Browser]      npx playwright install firefox');
+      if (isWindowsPlatform) {
+        console.error('[Browser]   2. On Windows, if install fails, try:');
+        console.error('[Browser]      npm install --force');
+      }
+      console.error('[Browser]   3. Or install with system dependencies:');
+      console.error('[Browser]      npx playwright install --with-deps firefox');
+    } else if (err.message.includes('dependencies') || err.message.includes('missing')) {
       console.error('[Browser] System dependencies are missing. Solutions:');
       console.error('[Browser]   1. Install deps: sudo npx playwright install-deps');
       console.error('[Browser]   2. Use xvfb-run: xvfb-run npx viewport-cli scan --target <url>');
@@ -194,13 +272,20 @@ const server = http.createServer(async (req, res) => {
       try {
         // Check if browser failed to initialize
         if (browserInitError) {
+          const isWindowsPlatform = process.platform === 'win32';
+          let helpMessage = 'Firefox binaries not available. ';
+          
+          if (isWindowsPlatform) {
+            helpMessage += 'On Windows, run: npx playwright install firefox';
+          } else {
+            helpMessage += 'Run: npx playwright install --with-deps firefox';
+          }
+          
           res.writeHead(503);
           res.end(JSON.stringify({
             error: 'Browser initialization failed',
             message: browserInitError.message,
-            help: 'Firefox failed to initialize. This usually means the Firefox binary download failed or system is incompatible. ' +
-                  'Try: npm install --force or check internet connection.',
-            details: browserInitError.toString()
+            help: helpMessage
           }));
           return;
         }
