@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
@@ -16,6 +17,11 @@ import (
 	"github.com/law-makers/viewport-cli/pkg/server"
 	"github.com/spf13/cobra"
 )
+
+// Helper function to check if string contains substring
+func contains(s, substr string) bool {
+	return strings.Contains(strings.ToLower(s), strings.ToLower(substr))
+}
 
 var (
 	targetURL string
@@ -163,6 +169,17 @@ func runScan(cmd *cobra.Command, args []string) error {
 		// Enhanced error reporting
 		fmt.Printf("\n%s\n", lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("1")).Render("❌ Scan Failed"))
 		fmt.Printf("Error: %v\n", err)
+		
+		// Check if this is a system dependencies issue (common in Docker/IDX)
+		if contains(err.Error(), "missing dependencies") || contains(err.Error(), "libxcb") || 
+		   contains(err.Error(), "libx11") || contains(err.Error(), "libgtk") {
+			fmt.Printf("\n⚠️  System dependencies missing (common in Docker, IDX, or restricted containers)\n")
+			fmt.Printf("\nSolutions:\n")
+			fmt.Printf("  1. Install deps: sudo npx playwright install-deps\n")
+			fmt.Printf("  2. Use xvfb-run wrapper: xvfb-run npx viewport-cli scan --target <url>\n")
+			fmt.Printf("  3. Use in environment with system libraries (Linux desktop, native OS)\n")
+		}
+		
 		fmt.Printf("\nDiagnostics:\n")
 		fmt.Printf("  • Target URL: %s\n", targetURL)
 		fmt.Printf("  • API Server: %s\n", apiURL)

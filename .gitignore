@@ -39,3 +39,6 @@ wrangler-output/
 # Logs
 *.log
 logs/
+
+#test
+test-npm/

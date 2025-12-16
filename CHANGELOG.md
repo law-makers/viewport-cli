@@ -5,6 +5,32 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.5] - 2025-12-16
+
+### Fixed
+- **Binary Version**: Updated Go binary version to match npm package (was 1.1.3, now 1.1.4)
+- Includes all fixes from v1.1.4: restricted environment support, better error messages
+
+## [1.1.4] - 2025-12-16
+
+### Fixed - Restricted Environment Support
+- **Postinstall Resilience**: postinstall.js no longer fails if system dependencies can't be installed
+  - First tries `npx playwright install --with-deps firefox` (installs deps + browser)
+  - If that fails (common in Docker/IDX/restricted containers), falls back to just installing the browser
+  - Provides clear guidance on solutions: sudo install-deps, xvfb-run wrapper, or use unrestricted environment
+  - npm install now succeeds even in environments where you can't install system deps
+
+- **Better Error Messages**: When Firefox fails to launch, CLI now explains the issue and provides solutions
+  - Detects "missing dependencies" errors
+  - Suggests: `sudo npx playwright install-deps` for direct installation
+  - Suggests: `xvfb-run npx viewport-cli scan --target <url>` for environments with xvfb
+  - Explains: Some environments (Docker/IDX without setup) need system libraries
+
+### Impact
+- **npm install works everywhere**: No more failing installations in Docker/IDX
+- **Helpful error messages**: Users know exactly what to do when Firefox can't launch
+- **IDX-friendly**: Users in restricted environments get clear guidance instead of confusing failures
+
 ## [1.1.3] - 2025-12-16
 
 ### Fixed - Critical: Browser Initialization Timing

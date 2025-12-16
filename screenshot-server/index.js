@@ -69,8 +69,16 @@ async function initBrowser() {
   } catch (err) {
     browserInitError = err;
     console.error('[Browser] ❌ Failed to initialize Firefox:', err.message);
-    console.error('[Browser] This typically means system dependencies are missing.');
-    console.error('[Browser] Solution: npx playwright install --with-deps firefox');
+    
+    // Provide helpful guidance based on error type
+    if (err.message.includes('dependencies') || err.message.includes('missing')) {
+      console.error('[Browser] System dependencies are missing. Solutions:');
+      console.error('[Browser]   1. Install deps: sudo npx playwright install-deps');
+      console.error('[Browser]   2. Use xvfb-run: xvfb-run npx viewport-cli scan --target <url>');
+      console.error('[Browser]   3. Use environment with system libraries (Linux desktop, not Docker/IDX)');
+    } else {
+      console.error('[Browser] Solution: npx playwright install --with-deps firefox');
+    }
     throw err;
   }
 }

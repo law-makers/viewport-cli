@@ -177,12 +177,32 @@ function installPlaywrightFirefox() {
       timeout: 10 * 60 * 1000 // 10 minute timeout
     });
 
-    logSuccess('Firefox browser installed successfully');
+    logSuccess('Firefox browser installed with system dependencies');
     return true;
   } catch (error) {
-    logWarn(`Could not pre-download Firefox: ${error.message}`);
-    logInfo('Firefox will be downloaded on first use instead');
-    return false;
+    // --with-deps might fail in restricted environments (Docker, IDX, etc)
+    // Try to install just the browser without deps
+    logWarn('System dependency installation failed (normal in restricted environments)');
+    logInfo('Attempting to install Firefox binary only...');
+    
+    try {
+      execSync('npx playwright install firefox', {
+        stdio: 'inherit',
+        timeout: 10 * 60 * 1000
+      });
+      
+      logSuccess('Firefox binary installed (system dependencies may be needed at runtime)');
+      logInfo('If Firefox fails to launch, you can:');
+      logInfo('  1. Install dependencies: sudo npx playwright install-deps');
+      logInfo('  2. Use xvfb-run wrapper: xvfb-run npx viewport-cli scan --target <url>');
+      logInfo('  3. Use in environment with system libraries (not Docker/IDX without setup)');
+      return true;
+    } catch (innerError) {
+      logWarn(`Could not download Firefox: ${innerError.message}`);
+      logInfo('Firefox will be downloaded on first use instead');
+      logInfo('If you see browser errors later, system dependencies may be missing');
+      return false;
+    }
   }
 }
 
