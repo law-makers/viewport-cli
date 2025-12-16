@@ -400,15 +400,18 @@ async function start() {
   try {
     console.log('[Server] Starting screenshot server...');
     
-    // Try to initialize browser, but don't fail if it does
-    // The health check and scan endpoints will report the error
+    // Initialize browser BEFORE starting server
+    // This ensures the browser is ready when requests come in
     console.log('[Server] Attempting to initialize Firefox...');
-    initBrowser().catch(err => {
-      // Silently catch - error is already logged above and stored in browserInitError
-      // The health endpoint will report it as 'degraded'
-    });
+    try {
+      await initBrowser();
+    } catch (err) {
+      // Error is already logged and stored in browserInitError
+      // Continue and start server - endpoints will report the error
+      console.error('[Server] ⚠️  Browser initialization failed, server will report errors to clients');
+    }
     
-    // Start HTTP server immediately (don't wait for browser)
+    // Start HTTP server (after browser init attempt)
     serverInstance = server.listen(PORT, () => {
       console.log(`[Server] ✅ Screenshot server listening on http://localhost:${PORT}`);
       console.log('[Server] Available endpoints:');

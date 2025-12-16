@@ -1,5 +1,5 @@
 {
-  "name": "test-user-install",
+  "name": "test-debug",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
@@ -10,6 +10,6 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "viewport-cli": "^1.1.1"
+    "viewport-cli": "file:.."
   }
 }
