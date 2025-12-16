@@ -185,6 +185,43 @@ func runScan(cmd *cobra.Command, args []string) error {
 
 	elapsed := time.Since(startTime)
 
+	// Validate that we actually got screenshots with data
+	hasValidScreenshots := false
+	for _, result := range resp.Results {
+		if len(result.ScreenshotBase64) > 0 {
+			hasValidScreenshots = true
+			break
+		}
+	}
+	
+	if !hasValidScreenshots {
+		// Enhanced error reporting for empty screenshots
+		fmt.Printf("\n%s\n", lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("1")).Render("❌ Scan Failed"))
+		fmt.Printf("Error: All screenshots are empty - browser may not have captured anything\n\n")
+		fmt.Printf("Diagnostics:\n")
+		fmt.Printf("  • Target URL: %s\n", targetURL)
+		fmt.Printf("  • API Server: %s\n", apiURL)
+		fmt.Printf("  • Viewports: %v\n", viewports)
+		fmt.Printf("  • Output Dir: %s\n", output)
+		fmt.Printf("\nSolutions:\n")
+		fmt.Printf("  1. Verify the target URL is accessible: curl %s\n", targetURL)
+		fmt.Printf("  2. Check that Firefox binaries are installed: npx playwright install --with-deps firefox\n")
+		fmt.Printf("  3. Try increasing timeout: viewport-cli scan --target %s --server-port 3002\n\n", targetURL)
+		
+		// Attempt to kill server on error if we started it
+		if serverManager != nil {
+			fmt.Printf("Cleaning up screenshot server on port %d...\n", serverPort)
+			if err := serverManager.Stop(); err != nil {
+				fmt.Printf("  ⚠️  Error stopping server: %v\n", err)
+			} else {
+				fmt.Printf("  ✅ Server stopped\n")
+			}
+		}
+		
+		fmt.Println()
+		return fmt.Errorf("scan failed: all screenshots are empty")
+	}
+
 	// Display results
 	fmt.Printf("\n%s\n", lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("2")).Render("✅ Scan Complete!"))
 	fmt.Printf("Duration: %.2fs\n", elapsed.Seconds())

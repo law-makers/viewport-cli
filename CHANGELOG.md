@@ -5,6 +5,33 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.2] - 2025-12-16
+
+### Fixed - Critical: Proper Error Handling & Validation
+- **Screenshot Validation**: Added validation to detect empty/failed screenshots instead of silently reporting success
+  - Now checks buffer size before converting to base64
+  - Validates base64 is not empty before returning
+  - Returns actual error messages instead of lying with success status
+  
+- **Error Propagation**: Screenshot server now returns HTTP 500 with error details when all captures fail
+  - Previous behavior: Silently returned empty base64 with 200 OK
+  - New behavior: Returns 500 with actual error message like "Browser not initialized"
+  
+- **CLI Validation**: CLI now validates that screenshots contain actual data before marking as success
+  - Detects when all screenshots are empty and fails appropriately
+  - Returns actionable error messages with solutions
+  - Includes diagnostic suggestions for common issues
+
+- **Better Error Messages**: 
+  - Shows actual problem: "Browser not initialized" or "Screenshot capture returned empty buffer"
+  - Provides solutions: "Check Firefox installation", "Run npx playwright install --with-deps firefox"
+  - Shows diagnostic info: target URL, API server, viewports being tested
+
+### Changed
+- HTTP response codes now reflect reality: 500 for failures, 200 for actual success
+- Status field in response: "complete" for successful scans, "partial" if some screenshots failed
+- All screenshots now validated before accepting them as valid
+
 ## [1.1.1] - 2025-12-16
 
 ### Fixed

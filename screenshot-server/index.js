@@ -117,9 +117,19 @@ async function captureScreenshot(targetUrl, device) {
       fullPage: true,
     });
     
+    // Validate screenshot was actually captured
+    if (!screenshotBuffer || screenshotBuffer.length === 0) {
+      throw new Error(`Screenshot capture returned empty buffer for ${device} - page may not have loaded correctly`);
+    }
+    
     const screenshotBase64 = screenshotBuffer.toString('base64');
 
-    console.log(`[Screenshot] Screenshot captured for ${device} (${screenshotBase64.length} bytes)`);
+    // Validate base64 is not empty
+    if (!screenshotBase64 || screenshotBase64.length === 0) {
+      throw new Error(`Failed to encode screenshot as base64 for ${device}`);
+    }
+
+    console.log(`[Screenshot] Screenshot captured for ${device} (${screenshotBuffer.length} bytes)`);
     await page.close();
 
     concurrentPages--;
@@ -232,11 +242,35 @@ const server = http.createServer(async (req, res) => {
           })
         );
         
+        // Check if any results have actual screenshots
+        const hasValidScreenshots = results.some(r => r.screenshotBase64 && r.screenshotBase64.length > 0);
+        const hasErrors = results.some(r => r.error);
+        
+        // If all screenshots failed or are empty, return 500 with errors
+        if (!hasValidScreenshots && hasErrors) {
+          const errorMsg = results.map(r => r.error).filter(e => e).join('; ');
+          res.writeHead(500);
+          res.end(JSON.stringify({ 
+            error: 'All screenshots failed: ' + errorMsg,
+            results: results 
+          }));
+          return;
+        }
+        
+        if (!hasValidScreenshots) {
+          res.writeHead(500);
+          res.end(JSON.stringify({ 
+            error: 'No valid screenshots captured - all buffers were empty',
+            results: results 
+          }));
+          return;
+        }
+        
         // Convert to CLI response format
         const response = {
           scanId: `scan-${Date.now()}`,
           timestamp: new Date().toISOString(),
-          status: 'complete',
+          status: hasErrors ? 'partial' : 'complete',
           results: results,  // Keep all results, including errors for debugging
           globalAnalysis: ''
         };
