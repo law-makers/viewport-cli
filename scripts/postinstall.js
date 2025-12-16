@@ -165,6 +165,28 @@ function installServerDependencies() {
 }
 
 /**
+ * Install only Firefox browser and its dependencies
+ */
+function installPlaywrightFirefox() {
+  try {
+    logInfo('Downloading Firefox browser for Playwright...');
+    
+    // Only install Firefox, not Chrome/WebKit
+    execSync('npx playwright install --with-deps firefox', {
+      stdio: 'inherit',
+      timeout: 10 * 60 * 1000 // 10 minute timeout
+    });
+
+    logSuccess('Firefox browser installed successfully');
+    return true;
+  } catch (error) {
+    logWarn(`Could not pre-download Firefox: ${error.message}`);
+    logInfo('Firefox will be downloaded on first use instead');
+    return false;
+  }
+}
+
+/**
  * Verify installation
  */
 function verifyInstallation(platformId) {
@@ -236,10 +258,14 @@ function main() {
       logWarn('Could not install screenshot server dependencies - you may need to install manually later');
     }
 
-    // 3b. Install Playwright browsers (Playwright handles this automatically)
-    logInfo('Playwright browsers will be installed on first use...');
+    // 4. Install only Firefox browser (not Chrome/WebKit - saves ~300MB!)
+    if (process.platform !== 'win32') {  // Playwright handles Windows better
+      installPlaywrightFirefox();
+    } else {
+      logInfo('Windows detected - Firefox will be installed on first use');
+    }
 
-    // 4. Verify installation
+    // 5. Verify installation
     if (!verifyInstallation(platformId)) {
       logWarn('Installation verification failed');
     }

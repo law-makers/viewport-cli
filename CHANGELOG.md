@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.1] - 2025-12-16
+
+### Fixed
+- **System Dependencies Auto-Installation**: 
+  - Postinstall now runs `npx playwright install --with-deps firefox` automatically
+  - Only installs Firefox (not Chrome/WebKit) - saves ~300MB!
+  - Auto-installs system dependencies (libxcb-shm0, libx11-xcb1, etc. on Linux)
+  - Works seamlessly on Google IDX, GitHub Codespaces, and fresh Linux environments
+
+- **Playwright Browser Download**: 
+  - Only Firefox browser installed, not all browsers (Chromium/WebKit)
+  - Reduced initial setup from ~500MB to ~200MB
+  - `--with-deps` flag ensures all system libraries installed automatically
+
+- **Error Messages**: Improved guidance when system dependencies missing
+  - Clear solution: `npx playwright install --with-deps firefox`
+
 ## [1.1.0] - 2025-12-16
 
 ### Changed

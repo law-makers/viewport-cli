@@ -69,8 +69,8 @@ async function initBrowser() {
   } catch (err) {
     browserInitError = err;
     console.error('[Browser] ❌ Failed to initialize Firefox:', err.message);
-    console.error('[Browser] This typically means Firefox binaries failed to download.');
-    console.error('[Browser] Make sure playwright is properly installed: npm install playwright');
+    console.error('[Browser] This typically means system dependencies are missing.');
+    console.error('[Browser] Solution: npx playwright install --with-deps firefox');
     throw err;
   }
 }
