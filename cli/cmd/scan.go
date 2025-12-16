@@ -79,7 +79,7 @@ func runScan(cmd *cobra.Command, args []string) error {
 		if cfg != nil && cfg.API.URL != "" {
 			apiURL = cfg.API.URL
 		} else {
-			apiURL = fmt.Sprintf("http://localhost:%d", serverPort)
+			apiURL = fmt.Sprintf("http://127.0.0.1:%d", serverPort)
 		}
 	}
 
@@ -160,6 +160,26 @@ func runScan(cmd *cobra.Command, args []string) error {
 
 	resp, err := client.Scan(scanCtx, req)
 	if err != nil {
+		// Enhanced error reporting
+		fmt.Printf("\n%s\n", lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("1")).Render("❌ Scan Failed"))
+		fmt.Printf("Error: %v\n", err)
+		fmt.Printf("\nDiagnostics:\n")
+		fmt.Printf("  • Target URL: %s\n", targetURL)
+		fmt.Printf("  • API Server: %s\n", apiURL)
+		fmt.Printf("  • Viewports: %v\n", viewports)
+		fmt.Printf("  • Output Dir: %s\n", output)
+		
+		// Attempt to kill server on error if we started it
+		if serverManager != nil {
+			fmt.Printf("\nCleaning up screenshot server on port %d...\n", serverPort)
+			if err := serverManager.Stop(); err != nil {
+				fmt.Printf("  ⚠️  Error stopping server: %v\n", err)
+			} else {
+				fmt.Printf("  ✅ Server stopped\n")
+			}
+		}
+		
+		fmt.Println()
 		return fmt.Errorf("scan failed: %w", err)
 	}
 

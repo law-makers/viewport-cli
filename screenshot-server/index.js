@@ -2,7 +2,8 @@
 /**
  * Local Screenshot Server
  * 
- * Runs Puppeteer directly with Chrome for local development.
+ * Runs Playwright with Firefox for local development.
+ * Works out-of-box in all environments (local, Codespaces, IDX, etc.)
  * 
  * Listens on port 3001 by default
  * 
@@ -14,9 +15,7 @@
 
 const http = require('http');
 const url = require('url');
-const fs = require('fs');
-const puppeteer = require('puppeteer-core');
-const chromium = require('@sparticuz/chromium');
+const { firefox } = require('playwright');
 
 // Parse command line arguments
 function parseArgs() {
@@ -49,69 +48,35 @@ let browser = null;
 let concurrentPages = 0;
 const MAX_CONCURRENT_PAGES = 3;
 let browserInitError = null; // Track browser init errors
+let serverInstance = null; // Track HTTP server for graceful shutdown
 
 /**
- * Ensure Chromium is downloaded
- */
-async function ensureChromium() {
-  try {
-    console.log('[Chromium] Checking if Chromium is available...');
-    const execPath = await chromium.executablePath();
-    
-    if (!execPath) {
-      throw new Error('Chromium executable path not found');
-    }
-    
-    // Check if file exists
-    if (!fs.existsSync(execPath)) {
-      console.log('[Chromium] Downloading Chromium binary...');
-      // The next call will trigger download if needed
-      await chromium.executablePath();
-    }
-    
-    console.log('[Chromium] ✅ Chromium is ready at:', execPath);
-    return true;
-  } catch (err) {
-    console.error('[Chromium] ❌ Failed to ensure Chromium:', err.message);
-    console.error('[Chromium] Make sure @sparticuz/chromium is installed: npm install @sparticuz/chromium');
-    throw err;
-  }
-}
-
-/**
- * Initialize browser
+ * Initialize browser with Playwright
  */
 async function initBrowser() {
   if (browser) return browser;
   if (browserInitError) throw browserInitError;
   
   try {
-    // Ensure Chromium is available first
-    await ensureChromium();
+    console.log('[Browser] Starting Playwright with Firefox...');
     
-    const launchOptions = {
-      headless: "new",
-      args: [
-        '--no-sandbox',
-        '--disable-setuid-sandbox',
-        '--disable-gpu',
-        '--disable-dev-shm-usage',
-      ],
-      executablePath: await chromium.executablePath(),
-    };
-
-    browser = await puppeteer.launch(launchOptions);
-    console.log('[Browser] ✅ Browser initialized\n');
+    browser = await firefox.launch({
+      headless: true,
+    });
+    
+    console.log('[Browser] ✅ Firefox browser initialized\n');
     return browser;
   } catch (err) {
     browserInitError = err;
-    console.error('[Browser] ❌ Failed to initialize:', err.message);
+    console.error('[Browser] ❌ Failed to initialize Firefox:', err.message);
+    console.error('[Browser] This typically means Firefox binaries failed to download.');
+    console.error('[Browser] Make sure playwright is properly installed: npm install playwright');
     throw err;
   }
 }
 
 /**
- * Capture screenshot
+ * Capture screenshot with Playwright
  */
 async function captureScreenshot(targetUrl, device) {
   // Rate limiting: wait if too many concurrent pages
@@ -134,13 +99,12 @@ async function captureScreenshot(targetUrl, device) {
     const page = await browser.newPage();
     
     // Set viewport
-    await page.setViewport({
+    await page.setViewportSize({
       width: viewport.width,
       height: viewport.height,
-      deviceScaleFactor: 1,
     });
 
-    // Navigate to target with timeout (use 'load' instead of 'networkidle2' for faster response)
+    // Navigate to target with timeout
     console.log(`[Screenshot] Navigating to ${targetUrl}...`);
     await page.goto(targetUrl, {
       waitUntil: 'load',
@@ -149,11 +113,11 @@ async function captureScreenshot(targetUrl, device) {
 
     console.log(`[Screenshot] Taking screenshot for ${device}...`);
     // Take screenshot as base64 PNG
-    const screenshotBase64 = await page.screenshot({
-      type: 'png',
+    const screenshotBuffer = await page.screenshot({
       fullPage: true,
-      encoding: 'base64',
     });
+    
+    const screenshotBase64 = screenshotBuffer.toString('base64');
 
     console.log(`[Screenshot] Screenshot captured for ${device} (${screenshotBase64.length} bytes)`);
     await page.close();
@@ -216,8 +180,8 @@ const server = http.createServer(async (req, res) => {
           res.end(JSON.stringify({
             error: 'Browser initialization failed',
             message: browserInitError.message,
-            help: 'The Chromium browser failed to initialize. This usually means system dependencies are missing. ' +
-                  'Install dependencies: sudo apt-get install -y libnss3 libgdk-pixbuf2.0-0 libgtk-3-0 libxss1 libgbm1 libasound2',
+            help: 'Firefox failed to initialize. This usually means the Firefox binary download failed or system is incompatible. ' +
+                  'Try: npm install --force or check internet connection.',
             details: browserInitError.toString()
           }));
           return;
@@ -273,7 +237,7 @@ const server = http.createServer(async (req, res) => {
           scanId: `scan-${Date.now()}`,
           timestamp: new Date().toISOString(),
           status: 'complete',
-          results: results.filter(r => !r.error),
+          results: results,  // Keep all results, including errors for debugging
           globalAnalysis: ''
         };
         
@@ -404,20 +368,31 @@ async function start() {
     
     // Try to initialize browser, but don't fail if it does
     // The health check and scan endpoints will report the error
-    console.log('[Server] Attempting to initialize browser...');
+    console.log('[Server] Attempting to initialize Firefox...');
     initBrowser().catch(err => {
       // Silently catch - error is already logged above and stored in browserInitError
       // The health endpoint will report it as 'degraded'
     });
     
     // Start HTTP server immediately (don't wait for browser)
-    server.listen(PORT, () => {
+    serverInstance = server.listen(PORT, () => {
       console.log(`[Server] ✅ Screenshot server listening on http://localhost:${PORT}`);
       console.log('[Server] Available endpoints:');
       console.log('  GET  / - Health check');
       console.log('  POST /screenshot - Single screenshot');
       console.log('  POST /screenshots - Batch screenshots');
       console.log('  POST /scan - CLI scan endpoint');
+    });
+
+    // Handle server errors
+    serverInstance.on('error', (err) => {
+      if (err.code === 'EADDRINUSE') {
+        console.error(`[Server] ❌ Port ${PORT} is already in use`);
+        console.error(`[Server] Try: lsof -ti:${PORT} | xargs kill -9 || true`);
+      } else {
+        console.error('[Server] ❌ Server error:', err);
+      }
+      process.exit(1);
     });
   } catch (err) {
     console.error('[Server] ❌ Critical error during startup:', err);
@@ -428,12 +403,28 @@ async function start() {
 /**
  * Cleanup on exit
  */
-process.on('SIGINT', async () => {
+async function cleanup() {
   console.log('[Server] Shutting down...');
+  
   if (browser) {
-    await browser.close();
+    try {
+      await browser.close();
+    } catch (err) {
+      console.error('[Server] Error closing browser:', err.message);
+    }
   }
-  process.exit(0);
-});
+  
+  if (serverInstance) {
+    serverInstance.close(() => {
+      console.log('[Server] Server closed');
+      process.exit(0);
+    });
+  } else {
+    process.exit(0);
+  }
+}
+
+process.on('SIGINT', cleanup);
+process.on('SIGTERM', cleanup);
 
 start();

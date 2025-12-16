@@ -22,7 +22,7 @@ type Manager struct {
 func NewManager(port int) *Manager {
 	return &Manager{
 		port:      port,
-		serverURL: fmt.Sprintf("http://localhost:%d", port),
+		serverURL: fmt.Sprintf("http://127.0.0.1:%d", port),
 	}
 }
 

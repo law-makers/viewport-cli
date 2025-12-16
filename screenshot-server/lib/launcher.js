@@ -6,6 +6,7 @@
  * - Auto-spawn the server if it's not running
  * - Wait for the health check endpoint
  * - Kill the server process when done
+ * - Kill any process holding a port (for cleanup)
  * 
  * Usage:
  *   const { ensureServerRunning, killServer } = require('./lib/launcher');
@@ -15,11 +16,33 @@
  *   await killServer(3001);
  */
 
-const { spawn } = require('child_process');
+const { spawn, execSync } = require('child_process');
 const path = require('path');
 const http = require('http');
 
 let serverProcess = null;
+
+/**
+ * Kill any process using a specific port (cross-platform)
+ * @param {number} port - Port to kill
+ * @returns {Promise<void>}
+ */
+async function killPortProcess(port) {
+  return new Promise((resolve) => {
+    try {
+      if (process.platform === 'win32') {
+        // Windows
+        execSync(`netstat -ano | findstr :${port} | findstr LISTENING | for /F "tokens=5" %a in ('findstr.exe /R /C:".*"') do taskkill /PID %a /F`, { stdio: 'ignore' });
+      } else {
+        // Unix/Linux/macOS
+        execSync(`lsof -ti:${port} | xargs kill -9`, { stdio: 'ignore' });
+      }
+    } catch (err) {
+      // Process might not exist, that's ok
+    }
+    resolve();
+  });
+}
 
 /**
  * Check if server is running on specified port by hitting health check endpoint
@@ -179,7 +202,7 @@ async function ensureServerRunning(port = 3001, autoStart = true, verbose = fals
 }
 
 /**
- * Kill the server process
+ * Kill the server process and cleanup the port if needed
  * @param {number} port - Port the server is running on (for logging)
  * @returns {Promise<void>}
  */
@@ -238,5 +261,6 @@ module.exports = {
   spawnServer,
   ensureServerRunning,
   killServer,
+  killPortProcess,
   findAvailablePort,
 };

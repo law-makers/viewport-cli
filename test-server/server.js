@@ -33,9 +33,9 @@ const server = http.createServer((req, res) => {
   }
 });
 
-server.listen(PORT, 'localhost', () => {
-  console.log(`\n🚀 Test server running at http://localhost:${PORT}`);
-  console.log(`📄 Test page: http://localhost:${PORT}/test.html\n`);
+server.listen(PORT, '127.0.0.1', () => {
+  console.log(`\n🚀 Test server running at http://127.0.0.1:${PORT}`);
+  console.log(`📄 Test page: http://127.0.0.1:${PORT}/test.html\n`);
 });
 
 process.on('SIGINT', () => {

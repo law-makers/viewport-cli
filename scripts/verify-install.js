@@ -81,9 +81,9 @@ check('screenshot-server/package.json exists', fileExists('screenshot-server/pac
 check('screenshot-server/lib/launcher.js exists', fileExists('screenshot-server/lib/launcher.js'));
 
 // 7. Check documentation
+check('README.md exist', fileExists('README.md'));
 check('INSTALL.md exists', fileExists('INSTALL.md'));
 check('CONTRIBUTING.md exists', fileExists('CONTRIBUTING.md'));
-check('NPM_PUBLISH_PLAN.md exists', fileExists('NPM_PUBLISH_PLAN.md'));
 
 // 8. Check CI/CD
 check('.github/workflows/build-and-publish.yml exists', 
@@ -94,7 +94,7 @@ const binDir = path.join('bin', 'platform-binaries');
 const hasBinaries = dirExists(binDir) && 
   fs.readdirSync(binDir).length > 0;
 check('bin/platform-binaries/ populated (optional pre-release)', 
-  hasBinaries, 'Build with: npm run build');
+  hasBinaries, 'Build with: npm run build:all');
 
 // 10. Validate package.json
 try {

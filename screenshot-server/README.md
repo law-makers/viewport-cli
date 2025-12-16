@@ -287,12 +287,12 @@ Options:
 ### Cleanup
 1. Receive SIGINT or killServer() call
 2. Close HTTP server
-3. Close Chrome/Chromium browser
+3. Close Firefox browser
 4. Exit process
 
 ### Error Handling
 - Timeout protection (30 second max)
-- Force-kill after 5 seconds graceful shutdown fails
+- Force-kill after 5 seconds if graceful shutdown fails
 - Automatic port fallback if conflict detected
 - Detailed error messages
 
@@ -300,8 +300,8 @@ Options:
 
 ### Server won't start
 ```bash
-# Check Chrome availability
-npx @sparticuz/chromium
+# Check Firefox availability
+npx playwright install firefox
 
 # Check logs
 viewport-server  # Run in foreground to see errors

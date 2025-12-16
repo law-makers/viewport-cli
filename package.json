@@ -1,6 +1,6 @@
 {
   "name": "viewport-cli",
-  "version": "1.0.8",
+  "version": "1.1.0",
   "description": "Responsive design auditing tool - capture screenshots across multiple viewports with zero manual setup",
   "keywords": [
     "responsive",
@@ -8,7 +8,7 @@
     "testing",
     "screenshots",
     "cli",
-    "puppeteer",
+    "playwright",
     "automation"
   ],
   "author": "law-makers",
@@ -37,16 +37,16 @@
     "build:macos-x64": "cd cli && GOOS=darwin GOARCH=amd64 go build -ldflags=\"-s -w\" -o ../bin/platform-binaries/macos-x64/viewport-cli main.go",
     "build:macos-arm64": "cd cli && GOOS=darwin GOARCH=arm64 go build -ldflags=\"-s -w\" -o ../bin/platform-binaries/macos-arm64/viewport-cli main.go",
     "build:windows": "cd cli && GOOS=windows GOARCH=amd64 go build -ldflags=\"-s -w\" -o ../bin/platform-binaries/windows-x64/viewport-cli.exe main.go",
+    "build:all": "npm run build:linux && npm run build:macos-x64 && npm run build:macos-arm64 && npm run build:windows && echo '✅ All platforms built successfully'",
     "test": "npm test --prefix screenshot-server",
     "test:integration": "cd test-server && node server.js &",
-    "prepublishOnly": "npm run build && npm run test",
+    "prepublishOnly": "npm run build:all && npm run test",
     "clean": "rm -rf bin/platform-binaries/* screenshot-server/node_modules node_modules",
     "verify": "node scripts/verify-install.js"
   },
   "dependencies": {
-    "@sparticuz/chromium": "^131.0.0",
     "express": "^4.18.0",
-    "puppeteer-core": "^24.0.0"
+    "playwright": "^1.40.0"
   },
   "devDependencies": {
     "eslint": "^9.0.0"

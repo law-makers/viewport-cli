@@ -5,6 +5,33 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] - 2025-12-16
+
+### Changed
+- **Browser Engine Migration**: Switched from Puppeteer + Chromium to Playwright + Firefox
+  - No system dependencies required (previously needed 6+ packages on Linux)
+  - Works out-of-the-box in GitHub Codespaces, Google IDX, and restricted environments
+  - Firefox binaries are pre-built and self-contained (~100MB, cached locally)
+  - Automatic browser setup on first run, no manual configuration needed
+
+### Improved
+- **CLI Error Handling**: Enhanced error messages with diagnostics
+  - Shows target URL, API server, viewports, and output directory on failure
+  - Automatically stops screenshot server on error to prevent port conflicts
+  - Clear error logs for troubleshooting
+
+- **Package Size**: Reduced from 167 to 92 npm packages (-45%)
+  - Simplified dependency tree
+  - Faster installation times
+
+- **Cross-Platform Support**: Works on macOS, Linux (all distros), Windows
+  - Docker containers
+  - CI/CD pipelines without system package installation
+
+### Fixed
+- **Port Cleanup**: Added graceful port cleanup on server shutdown
+- **Browser Initialization**: Firefox initializes reliably across all environments
+
 ## [1.0.8] - 2025-12-15
 
 ### Fixed

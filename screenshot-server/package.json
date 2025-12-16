@@ -1,7 +1,7 @@
 {
 	"name": "viewport-cli-server",
 	"version": "1.0.0",
-	"description": "Local screenshot server for ViewPort-CLI using Puppeteer",
+	"description": "Local screenshot server for ViewPort-CLI using Playwright Firefox",
 	"main": "index.js",
 	"bin": {
 		"viewport-server": "bin/viewport-server.js"
@@ -12,7 +12,6 @@
 		"test": "node test-integration.js"
 	},
 	"dependencies": {
-		"puppeteer-core": "^24.3.1",
-		"@sparticuz/chromium": "^130.0.0"
+		"playwright": "^1.40.0"
 	}
 }

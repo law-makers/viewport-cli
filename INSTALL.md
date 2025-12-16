@@ -13,8 +13,8 @@ npm install viewport-cli
 This will:
 1. ✅ Detect your OS and architecture
 2. ✅ Download the correct binary
-3. ✅ Install screenshot server dependencies
-4. ✅ Verify the installation
+3. ✅ Install screenshot server dependencies (Playwright + Firefox)
+4. ✅ Verify the installation (zero system dependencies needed!)
 
 Then use it immediately:
 
@@ -60,6 +60,39 @@ npm run screenshot
 | FreeBSD | x64 | ⏳ Coming soon |
 
 ## Troubleshooting
+
+### Issue: postinstall script fails
+
+**Common Causes**:
+1. No Node.js or npm installed
+2. npm not in PATH
+3. Insufficient disk space
+4. Network issues during installation
+
+**Solutions**:
+
+```bash
+# Check Node.js version (need 18+)
+node --version
+npm --version
+
+# Retry installation
+rm -rf node_modules package-lock.json
+npm install viewport-cli
+
+# Increase npm timeout (for slow connections)
+npm install --fetch-timeout=60000 viewport-cli
+
+# Enable verbose logging
+npm install viewport-cli --verbose
+
+# Check available disk space
+df -h
+
+# Clear npm cache
+npm cache clean --force
+npm install viewport-cli
+```
 
 ### Issue: "command not found: viewport-cli"
 
@@ -130,89 +163,18 @@ npm cache clean --force
 npm install viewport-cli
 ```
 
-### Issue: "Binary not found" error on startup
+### Issue: Firefox binary not found
 
-**Cause**: Binary wasn't downloaded properly
+**Cause**: Playwright binaries not installed properly
 
 **Solution**:
-```bash
-# Verify binary exists
-ls node_modules/viewport-cli/bin/platform-binaries/
-
-# List available binaries
-npx viewport-cli --debug 2>&1 | grep platform
-
-# Reinstall
-npm install --no-save viewport-cli@latest
-```
-
-### Issue: Chrome/Chromium not found
-
-**Cause**: Puppeteer dependencies not installed
-
-**This should not happen** - postinstall should handle it. If it does:
 
 ```bash
-# Manually install Chrome
-cd node_modules/viewport-cli/screenshot-server
-npm install
+# Manually pre-download Firefox binaries
+npx playwright install firefox
 
-# Or pre-download Chrome
-PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=false npm install puppeteer-core
-```
-
-### Issue: Browser initialization failed - libnss3 missing
-
-**Cause**: System libraries required by Chromium are not installed on your system
-
-**Error message**:
-```
-Failed to launch the browser process: Code: 127
-/tmp/chromium: error while loading shared libraries: libnss3.so
-```
-
-**Solution**: Install system dependencies
-
-**On Ubuntu/Debian:**
-```bash
-sudo apt-get update
-sudo apt-get install -y \
-  libnss3 \
-  libgdk-pixbuf2.0-0 \
-  libgtk-3-0 \
-  libxss1 \
-  libgbm1 \
-  libasound2 \
-  libatk1.0-0 \
-  libatk-bridge2.0-0 \
-  libgconf-2-4
-```
-
-**On Fedora/RHEL:**
-```bash
-sudo yum install -y \
-  nss \
-  libXss \
-  libgbm \
-  alsa-lib \
-  at-spi2-atk \
-  at-spi2-core \
-  libgconf-2
-```
-
-**On Alpine Linux:**
-```bash
-apk add --no-cache \
-  chromium \
-  nss \
-  freetype \
-  harfbuzz \
-  ca-certificates
-```
-
-After installing dependencies, try again:
-```bash
-viewport-cli scan --target http://localhost:3000
+# Retry viewport-cli
+npm install viewport-cli
 ```
 
 ### Issue: Port 3001 already in use
@@ -276,7 +238,7 @@ viewport-cli scan --target http://localhost:3000 --timeout 30
 
 **Common Causes**:
 - Slow internet connection
-- First time downloading Chrome (~120MB)
+- First time downloading Firefox binaries (~200MB total with dependencies)
 - Npm registry timeouts
 
 **Solutions**:
@@ -332,16 +294,16 @@ wsl npx viewport-cli scan --target http://localhost:3000
 If you have no internet access or limited bandwidth:
 
 ```bash
-# On connected machine:
+# On connected machine with internet:
 npm pack viewport-cli
+npm install  # Download all deps
 
-# Copy viewport-cli-1.0.0.tgz to offline machine
+# Copy the entire node_modules to offline machine
 
 # On offline machine:
 npm install ./viewport-cli-1.0.0.tgz
 
-# This will still need Chrome (~120MB) on first run
-# Pre-download Chrome from: https://github.com/sparticuz/chromium/releases
+# Playwright will use cached Firefox binaries
 ```
 
 ## Uninstallation
@@ -386,6 +348,6 @@ See [CONTRIBUTING.md](./CONTRIBUTING.md) for instructions on building ViewPort-C
 
 ---
 
-**Last Updated**: December 15, 2025  
+**Last Updated**: December 16, 2025  
 **Supported NPM**: 8.0.0+  
 **Supported Node.js**: 18.0.0+

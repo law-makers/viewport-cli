@@ -10,7 +10,7 @@ Web developers need a quick, reliable way to test how their websites look across
 
 - **Fast feedback loops**: Capture screenshots without leaving the terminal
 - **Multiple viewports**: Test mobile (375×667), tablet (768×1024), and desktop (1920×1080) sizes simultaneously
-- **Real rendering**: Use actual browser rendering (Chrome/Chromium), not mocked output
+- **Real rendering**: Use actual browser rendering (Firefox), not mocked output
 - **Local development**: Work seamlessly with localhost development servers
 - **Simple setup**: No complex infrastructure or external services required
 - **Automatic server management**: No need to manually start/stop the screenshot server
@@ -19,7 +19,7 @@ Web developers need a quick, reliable way to test how their websites look across
 
 ViewPort-CLI provides a two-component architecture:
 
-1. **Screenshot Server** (Node.js + Puppeteer): Lightweight, installable as NPM package via `viewport-server` command
+1. **Screenshot Server** (Node.js + Playwright): Lightweight, installable as NPM package via `viewport-server` command
 2. **CLI Tool** (Go): Automatically manages server lifecycle and captures screenshots
 
 Key improvements:
@@ -51,9 +51,9 @@ Key improvements:
                          │ (HTTP POST /screenshot)
                          │
 ┌────────────────────────▼──────────────────────────────────────┐
-│    Screenshot Server (Node.js + Puppeteer)                  │
+│    Screenshot Server (Node.js + Playwright)                 │
 │    Command: viewport-server --port 3001                     │
-│  ✓ Launches Chrome with Puppeteer                           │
+│  ✓ Launches Firefox with Playwright                         │
 │  ✓ Captures at multiple viewports                           │
 │  ✓ Returns PNG as base64                                    │
 │  Listening on http://localhost:3001                         │
@@ -73,11 +73,10 @@ Key improvements:
 ### System Requirements
 - **Node.js** 18.0 or higher (for screenshot server)
 - **Go** 1.20 or higher (for CLI)
-- **Chrome/Chromium** (automatically installed by Puppeteer)
-- **Operating System**: Linux, macOS, or Windows (with WSL recommended)
+- **Operating System**: Linux, macOS, or Windows (no system dependencies needed!)
 
 ### Disk Space
-- ~500MB for Node.js dependencies and Puppeteer
+- ~200MB for Node.js dependencies and Playwright (includes Firefox binary)
 - ~5-10MB per website scan (PNG files + metadata)
 
 ## Getting Started
@@ -289,8 +288,8 @@ viewport-server
 The screenshot server (`server/index.js`) is a lightweight Node.js application that:
 
 - **Listens on**: `http://localhost:3001` (or custom port via --port)
-- **Dependencies**: Node.js 18+, Puppeteer 24+ (lightweight, uses puppeteer-core)
-- **Chrome Management**: Puppeteer automatically manages Chrome installation
+- **Dependencies**: Node.js 18+, Playwright 1.40+ (lightweight, pre-built Firefox binaries)
+- **Browser Management**: Playwright automatically manages Firefox installation and updates
 - **Auto-start Helper**: Ships with launcher.js for integration (used by CLI)
 
 ### Server API
@@ -364,19 +363,17 @@ netstat -ano | findstr :3001  # Windows
 3. Ensure server started successfully: `viewport-server --port 3001`
 4. Try with explicit --no-auto-start and verify server is running
 
-### Issue: Chrome Won't Install
+### Issue: Browser Won't Install
 
-**Error**: `ERROR: Failed to download Chromium`
+**Error**: `ERROR: Failed to download Firefox binaries`
 
 **Solutions**:
 ```bash
-# Manually install Chrome
-cd server
-npx @sparticuz/chromium
+# Manually install Firefox binaries
+npx playwright install firefox
 
-# Or use system Chrome (set PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true)
-export PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
-npm install
+# Or force reinstall everything
+npm install --force
 ```
 
 ### Issue: Scan Fails with Network Error
@@ -593,7 +590,7 @@ viewport-cli/
 ## Dependencies
 
 ### Screenshot Server (Node.js)
-- **puppeteer-core + @sparticuz/chromium**: Lightweight browser automation (installed on first use)
+- **Playwright + Firefox**: Browser automation with pre-built binaries (zero system dependencies)
 - **Express**: HTTP server framework
 - Built-in Node.js modules: http, fs, stream, path
 
@@ -712,10 +709,10 @@ lsof -i :3001                      # Check port usage
 
 ## Acknowledgments
 
-- [Puppeteer](https://pptr.dev/) for browser automation
+- [Playwright](https://playwright.dev/) for browser automation
 - [Cobra](https://cobra.dev/) for CLI framework
 - [Lipgloss](https://github.com/charmbracelet/lipgloss) for terminal styling
-- [@sparticuz/chromium](https://github.com/sparticuz/chromium) for lightweight Chrome distribution
+- [Firefox](https://www.mozilla.org/firefox/) browser engine
 
 ---
 
