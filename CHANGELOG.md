@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.8] - 2025-12-15
+
+### Fixed
+- **Browser Init Error Handling**: Fixed undefined `browserInitError` variable reference in scan endpoint
+  - Server now properly tracks and reports browser initialization errors
+  - Returns 503 with detailed error message when Chromium fails to initialize
+  - Prevents "browserInitError is not defined" CLI error
+  - Helps users understand why browser initialization failed
+
 ## [1.0.7] - 2025-12-15
 
 ### Fixed

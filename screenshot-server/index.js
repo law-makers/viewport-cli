@@ -48,6 +48,7 @@ const DEVICE_VIEWPORTS = {
 let browser = null;
 let concurrentPages = 0;
 const MAX_CONCURRENT_PAGES = 3;
+let browserInitError = null; // Track browser init errors
 
 /**
  * Ensure Chromium is downloaded
@@ -82,6 +83,7 @@ async function ensureChromium() {
  */
 async function initBrowser() {
   if (browser) return browser;
+  if (browserInitError) throw browserInitError;
   
   try {
     // Ensure Chromium is available first
@@ -102,6 +104,7 @@ async function initBrowser() {
     console.log('[Browser] ✅ Browser initialized\n');
     return browser;
   } catch (err) {
+    browserInitError = err;
     console.error('[Browser] ❌ Failed to initialize:', err.message);
     throw err;
   }

@@ -1,6 +1,6 @@
 {
   "name": "viewport-cli",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "description": "Responsive design auditing tool - capture screenshots across multiple viewports with zero manual setup",
   "keywords": [
     "responsive",
@@ -44,9 +44,9 @@
     "verify": "node scripts/verify-install.js"
   },
   "dependencies": {
-    "puppeteer-core": "^24.0.0",
     "@sparticuz/chromium": "^131.0.0",
-    "express": "^4.18.0"
+    "express": "^4.18.0",
+    "puppeteer-core": "^24.0.0"
   },
   "devDependencies": {
     "eslint": "^9.0.0"
